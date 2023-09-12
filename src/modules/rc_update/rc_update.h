@@ -60,6 +60,11 @@
 #include <uORB/topics/rc_parameter_map.h>
 #include <uORB/topics/parameter_update.h>
 
+//Include the thrust vectoring parametrers for rc switching
+#include <uORB/topics/thrust_vectoring_attitude_status.h>
+
+
+
 using namespace time_literals;
 
 namespace rc_update
@@ -238,6 +243,10 @@ protected:
 		(ParamFloat<px4::params::RC_GEAR_TH>) _param_rc_gear_th,
 		(ParamFloat<px4::params::RC_RETURN_TH>) _param_rc_return_th,
 		(ParamFloat<px4::params::RC_ENG_MOT_TH>) _param_rc_eng_mot_th,
+
+		//Omnidirectional parameters
+		(ParamInt<px4::params::RC_VECT_MODE_SW>) _param_rc_vectoring_mode_sw,
+		(ParamFloat<px4::params::RC_VECTORING_TH>) _param_rc_vectoring_th,
 
 		(ParamInt<px4::params::RC_CHAN_CNT>) _param_rc_chan_cnt
 	)

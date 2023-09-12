@@ -42,17 +42,40 @@
 
 #include <matrix/matrix/math.hpp>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
+//Thrust Vectoring Parameters
+#include <uORB/topics/thrust_vectoring_attitude_status.h>
+
 
 namespace ControlMath
 {
+// /**
+//  * Converts thrust vector and yaw set-point to a desired attitude.
+//  * @param thr_sp desired 3D thrust vector
+//  * @param yaw_sp the desired yaw
+//  * @param att_sp attitude setpoint to fill
+//  */
+// void thrustToAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp);
+
 /**
- * Converts thrust vector and yaw set-point to a desired attitude.
+ * Converts thrust vector and yaw set-point to a desired attitude. Modified to include the omnidirectional control
  * @param thr_sp desired 3D thrust vector
  * @param yaw_sp the desired yaw
  * @param att_sp attitude setpoint to fill
+ * @param omni_att_mode attitude mode for omnidirectional vehicles
  */
-void thrustToAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp);
+void thrustToAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
+		      const int vectoring_att_mode, vehicle_attitude_setpoint_s &att_sp,
+		      thrust_vectoring_attitude_status_s & thrust_vectoring_status);
 
+/**
+ * Converts inertial thrust vector and yaw set-point to a zero-tilt attitude and body thrust vector for an omni-directional multirotor.
+ * @param thr_sp a 3D vector
+ * @param yaw_sp the desired yaw
+ * @param att current attitude of the robot
+ * @param att_sp attitude setpoint to fill
+ */
+void thrustToZeroTiltAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
+			      vehicle_attitude_setpoint_s &att_sp);
 /**
  * Limits the tilt angle between two unit vectors
  * @param body_unit unit vector that will get adjusted if angle is too big

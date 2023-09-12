@@ -44,6 +44,9 @@
 #include <uORB/topics/trajectory_setpoint.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
+//Thrust Vectoring Parameters
+#include <uORB/topics/thrust_vectoring_attitude_status.h>
+
 
 struct PositionControlStates {
 	matrix::Vector3f position;
@@ -178,6 +181,22 @@ public:
 	 * @param attitude_setpoint reference to struct to fill up
 	 */
 	void getAttitudeSetpoint(vehicle_attitude_setpoint_s &attitude_setpoint) const;
+
+	/**
+	 * Get the controllers output attitude setpoint
+	 * This attitude setpoint was generated from the resulting acceleration setpoint after position and velocity control.
+	 * It needs to be executed by the attitude controller to achieve velocity and position tracking.
+	 * @param att current attitude of the robot
+	 * @param vectoring_att_mode attitude mode for thrust vectoring capable vehicles
+	 * @param attitude_setpoint reference to struct to fill up
+	 * @param thrust_vectoring_status thrust vectoring status
+	 */
+	void getAttitudeSetpoint(const matrix::Quatf &att, const int vectoring_att_mode, vehicle_attitude_setpoint_s &attitude_setpoint,
+					thrust_vectoring_attitude_status_s &thrust_vectoring_status) const;
+
+
+
+
 
 	/**
 	 * All setpoints are set to NAN (uncontrolled). Timestampt zero.

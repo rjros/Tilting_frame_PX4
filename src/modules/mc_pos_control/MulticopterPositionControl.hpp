@@ -65,12 +65,23 @@
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
 
+// Added parameters
+#include <uORB/topics/thrust_vectoring_attitude_status.h>
+#include <uORB/topics/vehicle_attitude.h>
+#include <uORB/topics/vehicle_status.h>
+//read values from switches
+#include <uORB/topics/manual_control_switches.h>
+
+
+
 using namespace time_literals;
 
 class MulticopterPositionControl : public ModuleBase<MulticopterPositionControl>, public control::SuperBlock,
 	public ModuleParams, public px4::ScheduledWorkItem
 {
 public:
+	vehicle_attitude_s att;
+
 	MulticopterPositionControl(bool vtol = false);
 	~MulticopterPositionControl() override;
 
@@ -96,6 +107,8 @@ private:
 	uORB::Publication<vehicle_attitude_setpoint_s>	     _vehicle_attitude_setpoint_pub{ORB_ID(vehicle_attitude_setpoint)};
 	uORB::Publication<vehicle_local_position_setpoint_s> _local_pos_sp_pub{ORB_ID(vehicle_local_position_setpoint)};	/**< vehicle local position setpoint publication */
 
+	uORB::Publication<thrust_vectoring_attitude_status_s> _thrust_vectoring_status_pub{ORB_ID(thrust_vectoring_attitude_status)};
+
 	uORB::SubscriptionCallbackWorkItem _local_pos_sub{this, ORB_ID(vehicle_local_position)};	/**< vehicle local position */
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
@@ -105,6 +118,9 @@ private:
 	uORB::Subscription _vehicle_constraints_sub{ORB_ID(vehicle_constraints)};
 	uORB::Subscription _vehicle_control_mode_sub{ORB_ID(vehicle_control_mode)};
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};
+	//read values from the att mode
+	uORB::Subscription manual_control_switches_sub{ORB_ID(manual_control_switches)};
+	manual_control_switches_s switches{};
 
 	hrt_abstime _time_stamp_last_loop{0};		/**< time stamp of last loop iteration */
 	hrt_abstime _time_position_control_enabled{0};
@@ -126,6 +142,11 @@ private:
 		.maybe_landed = true,
 		.landed = true,
 	};
+
+	float _param_tilt_angle = 0, _param_tilt_dir = 0; // Keeping the last parameter values in degrees
+	float _tilt_angle = 0, _tilt_dir = 0; // Keeping the currently used values in radians
+	float _param_roll_angle = 0, _param_pitch_angle = 0; // Keeping the last parameter values in degrees
+	float _tilt_roll = 0, _tilt_pitch = 0; // Keeping the currently used values in radians
 
 	DEFINE_PARAMETERS(
 		// Position Control
@@ -175,7 +196,12 @@ private:
 		(ParamFloat<px4::params::MPC_MAN_Y_TAU>)    _param_mpc_man_y_tau,
 
 		(ParamFloat<px4::params::MPC_XY_VEL_ALL>)   _param_mpc_xy_vel_all,
-		(ParamFloat<px4::params::MPC_Z_VEL_ALL>)    _param_mpc_z_vel_all
+		(ParamFloat<px4::params::MPC_Z_VEL_ALL>)    _param_mpc_z_vel_all,
+
+		// Omni-directional vehicle parameters
+		(ParamInt<px4::params::VECT_ATT_MODE>) _param_vectoring_att_mode,
+		//Control mode with RC
+		(ParamInt<px4::params::RC_VECT_MODE_SW>) _param_vectoring_mode_sw
 	);
 
 	control::BlockDerivative _vel_x_deriv; /**< velocity derivative in x */

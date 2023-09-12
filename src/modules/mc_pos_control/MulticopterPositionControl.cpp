@@ -36,6 +36,7 @@
 #include <float.h>
 #include <lib/mathlib/mathlib.h>
 #include <lib/matrix/matrix/math.hpp>
+#include <matrix/Quaternion.hpp>
 #include <px4_platform_common/events.h>
 #include "PositionControl/ControlMath.hpp"
 
@@ -260,6 +261,24 @@ void MulticopterPositionControl::parameters_update(bool force)
 		_takeoff.setSpoolupTime(_param_com_spoolup_time.get());
 		_takeoff.setTakeoffRampTime(_param_mpc_tko_ramp_t.get());
 		_takeoff.generateInitialRampValue(_param_mpc_z_vel_p_acc.get());
+
+
+		// //Thrust vectoring parameters and tilt angle constraints
+		// if (abs(_param_omni_att_tilt_angle.get() - _param_tilt_angle) > FLT_EPSILON
+		//     || abs(_param_omni_att_tilt_dir.get() - _param_tilt_dir) > FLT_EPSILON) {
+		// 	_param_tilt_angle = _param_omni_att_tilt_angle.get();
+		// 	_param_tilt_dir = _param_omni_att_tilt_dir.get();
+		// 	_tilt_angle = math::radians(_param_tilt_angle);
+		// 	_tilt_dir = math::radians(_param_tilt_dir);
+		// }
+
+		// if (abs(_param_omni_att_roll.get() - _param_roll_angle) > FLT_EPSILON
+		//     || abs(_param_omni_att_pitch.get() - _param_pitch_angle) > FLT_EPSILON) {
+		// 	_param_roll_angle = _param_omni_att_roll.get();
+		// 	_param_pitch_angle = _param_omni_att_pitch.get();
+		// 	_tilt_roll = math::radians(_param_roll_angle);
+		// 	_tilt_pitch = math::radians(_param_pitch_angle);
+
 	}
 }
 
@@ -556,8 +575,32 @@ void MulticopterPositionControl::Run()
 
 			// Publish attitude setpoint output
 			vehicle_attitude_setpoint_s attitude_setpoint{};
-			_control.getAttitudeSetpoint(attitude_setpoint);
+			//_control.getAttitudeSetpoint(attitude_setpoint);
 			attitude_setpoint.timestamp = hrt_absolute_time();
+
+			///////////////////////////////////////////////////////////
+			// Thrust vectoring parameters, changed by rc or by the QGroundControl
+			thrust_vectoring_attitude_status_s vectoring_status{};
+			vectoring_status.timestamp = _time_stamp_last_loop;
+			//Get the the attitude setpoint with the omni parameters
+			_control.getAttitudeSetpoint(matrix::Quatf(att.q), _param_vectoring_att_mode.get(),
+							attitude_setpoint, vectoring_status);
+
+			///////////////////////////////////////////////////////////
+			//Add condition for selecting between rc or saved condition
+			//Get omni mode from rc
+			// param_t param = param_handle(px4::params::OMNI_ATT_MODE);
+			// manual_control_switches_sub.update(&switches);
+			// int32_t value= switches.omni_switch;
+			// param_set(param,&value);
+			///////////////////////////////////////////////////////////
+			//Add condition for selecting between rc or saved condition
+			vectoring_status.att_mode = _param_vectoring_att_mode.get();
+			vectoring_status.att_mode=switches.vectoring_switch;
+			_thrust_vectoring_status_pub.publish(vectoring_status);
+
+			//Thrust vectoring parameters, changed by rc or by the QGroundControl
+			///////////////////////////////////////////////////////////
 			_vehicle_attitude_setpoint_pub.publish(attitude_setpoint);
 
 		} else {
