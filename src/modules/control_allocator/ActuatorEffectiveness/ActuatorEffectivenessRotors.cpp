@@ -88,12 +88,20 @@ void ActuatorEffectivenessRotors::updateParams()
 {
 	ModuleParams::updateParams();
 
+	PX4_INFO("update parameters in effectiveness");
+
+
 	int32_t count = 0;
+
+	//int tilting_index=0;
+
 
 	if (param_get(_count_handle, &count) != 0) {
 		PX4_ERR("param_get failed");
 		return;
 	}
+
+	//checkAxis(tilting_index);
 
 	_geometry.num_rotors = math::min(NUM_ROTORS_MAX, (int)count);
 
@@ -104,7 +112,7 @@ void ActuatorEffectivenessRotors::updateParams()
 		param_get(_param_handles[i].position_z, &position(2));
 
 		Vector3f &axis = _geometry.rotors[i].axis;
-
+	//Switch which changes based on the mode, and axis_x*modifier
 		switch (_axis_config) {
 		case AxisConfiguration::Configurable:
 			param_get(_param_handles[i].axis_x, &axis(0));
@@ -154,6 +162,8 @@ int
 ActuatorEffectivenessRotors::computeEffectivenessMatrix(const Geometry &geometry,
 		EffectivenessMatrix &effectiveness, int actuator_start_index)
 {
+	PX4_INFO("Compute effectiveness");
+
 	int num_actuators = 0;
 
 	for (int i = 0; i < geometry.num_rotors; i++) {
@@ -165,7 +175,17 @@ ActuatorEffectivenessRotors::computeEffectivenessMatrix(const Geometry &geometry
 		++num_actuators;
 
 		// Get rotor axis
+		//This value changes for the additional propellers,
 		Vector3f axis = geometry.rotors[i].axis;
+		//leave index for the tiltable axis in the case for the iris edf ->4
+
+		// *** CUSTOM ***
+		// if (i==4)
+		// {
+		// 	//axis * Rmatrix -> transformed vector
+
+		// }
+		// *** END ***
 
 		// Normalize axis
 		float axis_norm = axis.norm();
@@ -316,3 +336,8 @@ ActuatorEffectivenessRotors::getEffectivenessMatrix(Configuration &configuration
 
 	return addActuators(configuration);
 }
+
+// void
+// ActuatorEffectivenessRotors::checkAxis(tilting_index){
+
+// }

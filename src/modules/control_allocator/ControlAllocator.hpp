@@ -132,11 +132,20 @@ private:
 
 	void update_effectiveness_matrix_if_needed(EffectivenessUpdateReason reason);
 
+	// *** CUSTOM ***
+	// void update_effectiveness_matrix_mode_change(EFFE);
+
+	// *** END ***
+
 	void check_for_motor_failures();
 
 	void publish_control_allocator_status(int matrix_index);
 
 	void publish_actuator_controls();
+
+	// *** CUSTOM ***
+	bool update_CA_manual_mode(); // -> checks if the manual orientation change has been triggered
+	// *** END ***
 
 	AllocationMethod _allocation_method_id{AllocationMethod::NONE};
 	ControlAllocation *_control_allocation[ActuatorEffectiveness::MAX_NUM_MATRICES] {}; 	///< class for control allocation calculations
@@ -164,7 +173,28 @@ private:
 		REMOVE_FIRST_FAILING_MOTOR = 1,
 	};
 
+	// *** CUSTOM ***
+	enum class CA_ManMode {
+		NONE = -1,
+		FORWARD = 0,
+		BACKWARD = 1,
+		DOWNWARD = 2,
+		UPWARD = 3,
+		X_AXIS_CCW = 4,
+		X_AXIS_CW = 5,
+		Z_AXIS_CCW = 6,
+		Z_AXIS_CW = 7,
+	};
+	//*** END ***
+
+
 	EffectivenessSource _effectiveness_source_id{EffectivenessSource::NONE};
+	// *** CUSTOM ***
+	CA_ManMode _ca_manual_mode_id{CA_ManMode::NONE};
+	//*** END ***
+
+
+
 	ActuatorEffectiveness *_actuator_effectiveness{nullptr}; 	///< class providing actuator effectiveness
 
 	uint8_t _control_allocation_selection_indexes[NUM_ACTUATORS * ActuatorEffectiveness::MAX_NUM_MATRICES] {};
@@ -208,12 +238,18 @@ private:
 	ParamHandles _param_handles{};
 	Params _params{};
 	bool _has_slew_rate{false};
+	bool new_mode{false};
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::CA_AIRFRAME>) _param_ca_airframe,
 		(ParamInt<px4::params::CA_METHOD>) _param_ca_method,
 		(ParamInt<px4::params::CA_FAILURE_MODE>) _param_ca_failure_mode,
-		(ParamInt<px4::params::CA_R_REV>) _param_r_rev
+		(ParamInt<px4::params::CA_R_REV>) _param_r_rev,
+		// *** CUSTOM ***
+		(ParamInt<px4::params::CA_MAN_ANGLE>) _param_ca_man_angle,
+		(ParamInt<px4::params::CA_ATTITUDE_MODE>) _param_ca_attitude_mode
+		//*** END ***
+
 	)
 
 };

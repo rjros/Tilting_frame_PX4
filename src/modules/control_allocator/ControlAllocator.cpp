@@ -104,6 +104,7 @@ ControlAllocator::init()
 	ScheduleDelayed(50_ms);
 #endif
 
+
 	return true;
 }
 
@@ -206,6 +207,85 @@ ControlAllocator::update_allocation_method(bool force)
 	}
 }
 
+// *** CUSTOM  **
+bool
+ControlAllocator::update_CA_manual_mode()
+{
+	CA_ManMode source = (CA_ManMode)_param_ca_man_angle.get();
+	//call a function that receives the angle and uses it for the new axis orientation
+
+	if (_ca_manual_mode_id!= source) {
+
+
+		switch (source) {
+		case CA_ManMode::NONE:
+			PX4_INFO("NONE");
+			break;
+		case CA_ManMode::FORWARD:
+			PX4_INFO("Forward Mode");
+			break;
+
+		case CA_ManMode::BACKWARD:
+			PX4_INFO("Backward Mode");
+			break;
+
+		case CA_ManMode::UPWARD:
+			PX4_INFO("Upward Mode");
+			break;
+
+		case CA_ManMode::DOWNWARD:
+			PX4_INFO("DOWNWARD Mode");
+			break;
+
+		case CA_ManMode::X_AXIS_CCW:
+			PX4_INFO("X CCW Mode");
+			break;
+
+		case CA_ManMode::X_AXIS_CW:
+			PX4_INFO("X CW Mode");
+			break;
+
+		case CA_ManMode::Z_AXIS_CCW:
+			PX4_INFO("Z CCW Mode");
+			break;
+
+		case CA_ManMode::Z_AXIS_CW:
+			PX4_INFO("Z CW Mode");
+			break;
+
+		default:
+			PX4_ERR("unknown manual change");
+			break;
+		}
+
+		// // Replace previous source with new one
+		// if (tmp == nullptr) {
+		// 	// It did not work, forget about it
+		// 	PX4_ERR("Actuator effectiveness init failed");
+		// 	_param_ca_airframe.set((int)_effectiveness_source_id);
+
+		// } else {
+		// 	// Swap effectiveness sources
+		// 	delete _actuator_effectiveness;
+		// 	_actuator_effectiveness = tmp;
+
+		// 	// Save source id
+		// 	_effectiveness_source_id = source;
+		// }
+		_ca_manual_mode_id = source;
+
+		return true;
+	}
+
+	return false;
+}
+
+// *** END **
+
+
+
+
+
 bool
 ControlAllocator::update_effectiveness_source()
 {
@@ -302,12 +382,15 @@ ControlAllocator::Run()
 		return;
 	}
 
+
 	perf_begin(_loop_perf);
 
 #ifndef ENABLE_LOCKSTEP_SCHEDULER // Backup schedule would interfere with lockstep
 	// Push backup schedule
 	ScheduleDelayed(50_ms);
 #endif
+
+	//PX4_INFO("checking looping");
 
 	// Check if parameters have changed
 	if (_parameter_update_sub.updated() && !_armed) {
@@ -318,6 +401,7 @@ ControlAllocator::Run()
 		if (_handled_motor_failure_bitmask == 0) {
 			// We don't update the geometry after an actuator failure, as it could lead to unexpected results
 			// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+			PX4_INFO("checking if it changes effectiveness");
 			updateParams();
 			parameters_updated();
 		}
@@ -399,6 +483,16 @@ ControlAllocator::Run()
 		_last_run = now;
 
 		check_for_motor_failures();
+		new_mode= update_CA_manual_mode();
+		if(new_mode){
+
+			PX4_INFO("Mode has been changed");// change the effectivenss matrix shape
+		}
+
+		// update the matrix since the pos changed, or do so in the do_update time
+
+
+		//PX4_INFO("checking if it changes effectiveness do ");
 
 		update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
 

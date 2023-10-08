@@ -89,6 +89,7 @@ if(gazebo_FOUND)
 		iris_vision
 		iris_4edf
 		omnicopter
+		NDT_tilting
 		plane
 		plane_cam
 		plane_catapult
@@ -102,6 +103,7 @@ if(gazebo_FOUND)
 		tailsitter
 		techpod
 		tiltrotor
+		thrust_vectoring_hex_dual
 		typhoon_h480
 		uuv_bluerov2_heavy
 		uuv_hippocampus

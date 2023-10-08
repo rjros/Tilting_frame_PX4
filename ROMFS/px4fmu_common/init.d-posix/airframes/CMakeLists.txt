@@ -90,7 +90,6 @@ px4_add_romfs_files(
 	10017_jmavsim_iris
 	10018_gazebo-classic_iris_foggy_lidar
 	10019_gazebo-classic_omnicopter
-	10021_gazebo-classic_iris_4edf
 
 	10030_gazebo-classic_px4vision
 
@@ -102,4 +101,10 @@ px4_add_romfs_files(
 	17002_flightgear_tf-g2
 
 	# [22000, 22999] Reserve for custom models
+
+	# CUSTOM Drones
+	22000_gazebo-classic_iris_4edf
+	22100_gazebo-classic_thrust_vectoring_hex_dual
+	25003_gazebo-classic_NDT_tilting
+
 )

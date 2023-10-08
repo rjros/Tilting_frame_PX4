@@ -55,7 +55,7 @@ class ActuatorEffectivenessRotors : public ModuleParams, public ActuatorEffectiv
 {
 public:
 	enum class AxisConfiguration {
-		Configurable, ///< axis can be configured
+		Configurable, ///< axis can be configured // can refer to a dynamic allocation
 		FixedForward, ///< axis is fixed, pointing forwards (positive X)
 		FixedUpwards, ///< axis is fixed, pointing upwards (negative Z)
 	};
@@ -85,6 +85,12 @@ public:
 
 	bool getEffectivenessMatrix(Configuration &configuration, EffectivenessUpdateReason external_update) override;
 
+	//### CUSTOM ###
+
+	void checkAxis(int tilting_index);
+
+
+	//### END ###
 	void getDesiredAllocationMethod(AllocationMethod allocation_method_out[MAX_NUM_MATRICES]) const override
 	{
 		allocation_method_out[0] = AllocationMethod::SEQUENTIAL_DESATURATION;
@@ -133,7 +139,12 @@ public:
 private:
 	void updateParams() override;
 	const AxisConfiguration _axis_config;
-	const bool _tilt_support; ///< if true, tilt servo assignment params are loaded
+	const bool _tilt_support; ///< if true, tilt servo assignment params are loaded]
+	// switch for changing the axis config manually to known fixed pos
+	//forward, backward
+	//CCW, CW -> horizontal
+	//upward, downward
+	//CCW, CW -> vertical
 
 	struct ParamHandles {
 		param_t position_x;
