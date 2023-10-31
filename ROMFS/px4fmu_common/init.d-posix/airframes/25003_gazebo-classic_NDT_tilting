@@ -32,12 +32,11 @@
 # param set-default MAV_TYPE 14
 
 param set-default SYS_CTRL_ALLOC 0 #dynamic allocation
-param set-default CA_AIRFRAME 0 #Tilting Multirotor
+param set-default CA_AIRFRAME 12 #Tilting Multirotor
 # param set-default CA_TILTING_TYPE 1 #Omnidirectional tilting drone
 
 
 # Set all 8 channels
-set PWM_OUT 12345678
 set PWM_AUX_OUT 1234
 param set-default CA_ROTOR_COUNT 8
 param set-default CA_SV_TL_COUNT 4

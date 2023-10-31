@@ -158,7 +158,7 @@ public:
 	 * @param dt time in seconds since last iteration
 	 * @return true if update succeeded and output setpoint is executable, false if not
 	 */
-	bool update(const float dt);
+	bool update(const float dt,const int att_mode);
 
 	/**
 	 * Set the integral term in xy to 0.
@@ -211,8 +211,10 @@ private:
 	bool _inputValid();
 
 	void _positionControl(); ///< Position proportional control
-	void _velocityControl(const float dt); ///< Velocity PID control
+	void _velocityControl(const float dt,const int att_mode); ///< Velocity PID control
 	void _accelerationControl(); ///< Acceleration setpoint processing
+	void _omni_accelerationControl();// separates thrust values if omni condition is on
+
 
 	// Gains
 	matrix::Vector3f _gain_pos_p; ///< Position control proportional gain
@@ -228,6 +230,8 @@ private:
 	float _lim_thr_max{}; ///< Maximum collective thrust allowed as output [-1,0] e.g. -0.1
 	float _lim_thr_xy_margin{}; ///< Margin to keep for horizontal control when saturating prioritized vertical thrust
 	float _lim_tilt{}; ///< Maximum tilt from level the output attitude is allowed to have
+
+	float _xy_factor{0.7};// Analogous to the hover thrust multiplier
 
 	float _hover_thrust{}; ///< Thrust [HOVER_THRUST_MIN, HOVER_THRUST_MAX] with which the vehicle hovers not accelerating down or up with level orientation
 

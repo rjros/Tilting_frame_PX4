@@ -145,6 +145,7 @@ private:
 	//CCW, CW -> horizontal
 	//upward, downward
 	//CCW, CW -> vertical
+	//have a Parameter for the first tilt index of each motor
 
 	struct ParamHandles {
 		param_t position_x;

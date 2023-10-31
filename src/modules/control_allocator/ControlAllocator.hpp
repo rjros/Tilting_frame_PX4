@@ -54,6 +54,9 @@
 #include <ActuatorEffectivenessUUV.hpp>
 #include <ActuatorEffectivenessHelicopter.hpp>
 
+//Custom
+#include <ActuatorEffectivenessThrustVectoringMC.hpp>
+
 #include <ControlAllocation.hpp>
 #include <ControlAllocationPseudoInverse.hpp>
 #include <ControlAllocationSequentialDesaturation.hpp>
@@ -78,6 +81,10 @@
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/failure_detector_status.h>
+//CUSTOM
+#include <uORB/topics/thrust_vectoring_attitude_status.h>
+
+//CUSTOM
 
 class ControlAllocator : public ModuleBase<ControlAllocator>, public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -166,6 +173,7 @@ private:
 		CUSTOM = 9,
 		HELICOPTER_TAIL_ESC = 10,
 		HELICOPTER_TAIL_SERVO = 11,
+		THRUST_VECTORING_MC=12
 	};
 
 	enum class FailureMode {
@@ -191,6 +199,8 @@ private:
 	EffectivenessSource _effectiveness_source_id{EffectivenessSource::NONE};
 	// *** CUSTOM ***
 	CA_ManMode _ca_manual_mode_id{CA_ManMode::NONE};
+	CA_ManMode ref{CA_ManMode::NONE};
+	int mode_value{10};
 	//*** END ***
 
 
@@ -219,6 +229,11 @@ private:
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _vehicle_control_mode_sub{ORB_ID(vehicle_control_mode)};
 	uORB::Subscription _failure_detector_status_sub{ORB_ID(failure_detector_status)};
+	//Test
+
+	uORB::Subscription _thrust_vectoring_status_sub{ORB_ID(thrust_vectoring_attitude_status)};
+	int16_t prev_orientation{0};
+	//Test
 
 	matrix::Vector3f _torque_sp;
 	matrix::Vector3f _thrust_sp;
@@ -247,8 +262,12 @@ private:
 		(ParamInt<px4::params::CA_R_REV>) _param_r_rev,
 		// *** CUSTOM ***
 		(ParamInt<px4::params::CA_MAN_ANGLE>) _param_ca_man_angle,
-		(ParamInt<px4::params::CA_ATTITUDE_MODE>) _param_ca_attitude_mode
+		(ParamInt<px4::params::CA_ATTITUDE_MODE>) _param_ca_attitude_mode,
+		(ParamInt<px4::params::CA_INDEX>) _param_ca_index,
+
 		//*** END ***
+		(ParamInt<px4::params::VECT_ATT_MODE>) _param_vectoring_att_mode
+
 
 	)
 

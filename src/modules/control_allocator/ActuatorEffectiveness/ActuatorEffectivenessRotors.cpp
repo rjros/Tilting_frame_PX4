@@ -76,6 +76,7 @@ ActuatorEffectivenessRotors::ActuatorEffectivenessRotors(ModuleParams *parent, A
 		if (_tilt_support) {
 			snprintf(buffer, sizeof(buffer), "CA_ROTOR%u_TILT", i);
 			_param_handles[i].tilt_index = param_find(buffer);
+			PX4_INFO("tilt index %d",_param_handles[i].tilt_index);
 		}
 	}
 
@@ -89,6 +90,7 @@ void ActuatorEffectivenessRotors::updateParams()
 	ModuleParams::updateParams();
 
 	PX4_INFO("update parameters in effectiveness");
+
 
 
 	int32_t count = 0;
@@ -105,6 +107,9 @@ void ActuatorEffectivenessRotors::updateParams()
 
 	_geometry.num_rotors = math::min(NUM_ROTORS_MAX, (int)count);
 
+	PX4_INFO("Changed Axis");
+
+
 	for (int i = 0; i < _geometry.num_rotors; ++i) {
 		Vector3f &position = _geometry.rotors[i].position;
 		param_get(_param_handles[i].position_x, &position(0));
@@ -114,7 +119,7 @@ void ActuatorEffectivenessRotors::updateParams()
 		Vector3f &axis = _geometry.rotors[i].axis;
 	//Switch which changes based on the mode, and axis_x*modifier
 		switch (_axis_config) {
-		case AxisConfiguration::Configurable:
+		case AxisConfiguration::Configurable:// could this value be multiplied by something
 			param_get(_param_handles[i].axis_x, &axis(0));
 			param_get(_param_handles[i].axis_y, &axis(1));
 			param_get(_param_handles[i].axis_z, &axis(2));
@@ -150,7 +155,7 @@ ActuatorEffectivenessRotors::addActuators(Configuration &configuration)
 		PX4_ERR("Wrong actuator ordering: servos need to be after motors");
 		return false;
 	}
-
+	//computation method can be different based on the type of matrix [[fixed],[tilted]]
 	int num_actuators = computeEffectivenessMatrix(_geometry,
 			    configuration.effectiveness_matrices[configuration.selected_matrix],
 			    configuration.num_actuators_matrix[configuration.selected_matrix]);
@@ -162,7 +167,6 @@ int
 ActuatorEffectivenessRotors::computeEffectivenessMatrix(const Geometry &geometry,
 		EffectivenessMatrix &effectiveness, int actuator_start_index)
 {
-	PX4_INFO("Compute effectiveness");
 
 	int num_actuators = 0;
 
@@ -171,6 +175,7 @@ ActuatorEffectivenessRotors::computeEffectivenessMatrix(const Geometry &geometry
 		if (i + actuator_start_index >= NUM_ACTUATORS) {
 			break;
 		}
+		PX4_INFO("Actuator_start index %d", actuator_start_index);
 
 		++num_actuators;
 

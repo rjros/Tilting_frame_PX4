@@ -89,7 +89,7 @@ if(gazebo_FOUND)
 		iris_vision
 		iris_4edf
 		omnicopter
-		NDT_tilting
+		# NDT_tilting
 		plane
 		plane_cam
 		plane_catapult

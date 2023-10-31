@@ -30,7 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-
 /**
  * Thrust vectoring attitude mode
  *
@@ -54,3 +53,17 @@
  * @value 2 fixed attitude
  */
 PARAM_DEFINE_INT32(VECT_ATT_MODE, 0);
+
+
+/**
+ * Manual orientation
+ *
+ * @min 0
+ * @max 2
+ * @value 0 Forward
+ * @value 1 Backward
+ * @value 2 CCW
+ */
+PARAM_DEFINE_INT32(MAN_ATT_DIR, 0);
+
+

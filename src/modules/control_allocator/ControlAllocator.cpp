@@ -227,6 +227,8 @@ ControlAllocator::update_CA_manual_mode()
 
 		case CA_ManMode::BACKWARD:
 			PX4_INFO("Backward Mode");
+			//updateParams();
+			//parameters_updated();
 			break;
 
 		case CA_ManMode::UPWARD:
@@ -345,6 +347,9 @@ ControlAllocator::update_effectiveness_source()
 		case EffectivenessSource::HELICOPTER_TAIL_SERVO:
 			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::SERVOS);
 			break;
+		case EffectivenessSource::THRUST_VECTORING_MC:
+			tmp = new ActuatorEffectivenessThrustVectoringMC(this);
+			break;
 
 		default:
 			PX4_ERR("Unknown airframe");
@@ -459,6 +464,11 @@ ControlAllocator::Run()
 	vehicle_torque_setpoint_s vehicle_torque_setpoint;
 	vehicle_thrust_setpoint_s vehicle_thrust_setpoint;
 
+	/*** CUSTOM ***/
+	thrust_vectoring_attitude_status_s thrust_vec_status;
+	/*** END-CUSTOM ***/
+
+
 	// Run allocator on torque changes
 	if (_vehicle_torque_setpoint_sub.update(&vehicle_torque_setpoint)) {
 		_torque_sp = matrix::Vector3f(vehicle_torque_setpoint.xyz);
@@ -490,10 +500,45 @@ ControlAllocator::Run()
 		}
 
 		// update the matrix since the pos changed, or do so in the do_update time
+		// call a function that receives the angle and uses it for the new axis orientation
+		//Accepts changes when the system is running
+		//print once to check wether the flag has change or not
+
+		_thrust_vectoring_status_sub.copy(&thrust_vec_status);
+
+		if(thrust_vec_status.manual_orientation!=prev_orientation){
+
+		switch (thrust_vec_status.manual_orientation) {
+			case 0:
+				PX4_INFO("NONE");
+
+				mode_value=0;
+				break;
+			case 1:
+				PX4_INFO("Forward Mode");
+				mode_value=1;
+				break;
+
+			case 2:
+				PX4_INFO("Backward Mode");
+				//updateParams();
+				//parameters_updated();
+				break;
+			default:
+				PX4_INFO("unknown manual change");
+				break;
+			}
+		prev_orientation=thrust_vec_status.manual_orientation;
+		}
+
+		//TEST
+
+		//PX4_INFO("Mode Value %d",mode_value);
+
 
 
 		//PX4_INFO("checking if it changes effectiveness do ");
-
+		//place condition here for updating the matrix
 		update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
 
 		// Set control setpoint vector(s)
@@ -504,6 +549,22 @@ ControlAllocator::Run()
 		c[0](3) = _thrust_sp(0);
 		c[0](4) = _thrust_sp(1);
 		c[0](5) = _thrust_sp(2);
+
+		/*** CUSTOM ***/
+		//PX4_INFO("Number of Control Allocation: %d \n",_num_control_allocation);
+		// Here the thrust_sp is between 0 and 1
+		// PX4_INFO("CA thrust_sp: %f  %f  %f \n", (double)_thrust_sp(0), (double)_thrust_sp(1), (double)_thrust_sp(2));
+		// Here the torque_sp seems to be between 0 and 1
+		/*** END-CUSTOM ***/
+
+
+		// Would be interesting to separate the matrix based on the task
+		//Use fixed propellers for X task and the remaing tilting propellers
+		//could be use for another task. Keeping the flight and task stable
+
+		//In the px4_tilting the control allocator checks the source first
+
+		//if (source!=EffectivenessSource::Thrust_Vectoring_Mode)
 
 		if (_num_control_allocation > 1) {
 			if (_vehicle_torque_setpoint1_sub.copy(&vehicle_torque_setpoint)) {
@@ -568,6 +629,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 	if (_actuator_effectiveness->getEffectivenessMatrix(config, reason)) {
 		_last_effectiveness_update = hrt_absolute_time();
 
+		//saves the previous control allocation matrix
 		memcpy(_control_allocation_selection_indexes, config.matrix_selection_indexes,
 		       sizeof(_control_allocation_selection_indexes));
 
@@ -592,7 +654,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 				}
 
 				int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
-
+				// sanity check for max motors
 				if ((ActuatorType)actuator_type == ActuatorType::MOTORS) {
 					if (actuator_type_idx >= MAX_NUM_MOTORS) {
 						PX4_ERR("Too many motors");

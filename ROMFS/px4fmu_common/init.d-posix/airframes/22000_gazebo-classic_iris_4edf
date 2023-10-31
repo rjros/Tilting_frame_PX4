@@ -35,7 +35,7 @@ param set-default CA_ROTOR4_KM 0.00
 param set-default CA_ROTOR4_AX 0.0
 param set-default CA_ROTOR4_AY -1.0
 param set-default CA_ROTOR4_AZ 0.0
-#param set-default CA_ROTOR4_CT 3.25
+param set-default CA_ROTOR4_CT 0.0
 
 
 param set-default CA_ROTOR5_PX 0.00
@@ -44,7 +44,7 @@ param set-default CA_ROTOR5_KM 0.00
 param set-default CA_ROTOR5_AX 0.0
 param set-default CA_ROTOR5_AY 1.0
 param set-default CA_ROTOR5_AZ 0.0
-#param set-default CA_ROTOR5_CT 3.25
+param set-default CA_ROTOR5_CT 0.0
 
 #Front fan, pushes back
 param set-default CA_ROTOR6_PX 0.15
@@ -62,7 +62,7 @@ param set-default CA_ROTOR7_KM 0.00
 param set-default CA_ROTOR7_AX 1.0
 param set-default CA_ROTOR7_AY 0.0
 param set-default CA_ROTOR7_AZ 0.0
-#param set-default CA_ROTOR7_CT 3.25
+#param set-default CA_ROTOR7_CT 0.0
 
 
 param set-default PWM_MAIN_FUNC1 101
@@ -82,7 +82,7 @@ param set-default FD_FAIL_P 0
 param set-default FD_FAIL_R 0
 
 #Set omni parameters
-param set VECTORING_ATT_MODE 1
+param set VECT_ATT_MODE 2
 
 set MIXER skip
 set MIXER_AUX none

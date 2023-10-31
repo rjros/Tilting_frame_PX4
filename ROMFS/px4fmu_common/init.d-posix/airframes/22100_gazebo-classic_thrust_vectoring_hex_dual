@@ -10,9 +10,13 @@
 . ${R}etc/init.d/rc.mc_defaults
 
 #Frame Configuration information
-param set-default MAV_TYPE 13
-param set-default CA_ROTOR_COUNT 6
-# param set-default CA_AIRFRAME 0
+#param set-default MAV_TYPE 13
+param set-default CA_ROTOR_COUNT 8
+# set PWM_AUX_OUT 1234
+
+param set-default CA_AIRFRAME 12
+param set-default CA_SV_TL_COUNT 2
+
 
 # Rotor information
 param set-default CA_ROTOR0_PX 0.275
@@ -34,12 +38,43 @@ param set-default CA_ROTOR5_PX -0.139
 param set-default CA_ROTOR5_PY 0.238
 param set-default CA_ROTOR5_KM -0.05
 
+#EDFs
+param set-default CA_ROTOR6_PX 0.00
+param set-default CA_ROTOR6_PY -0.250
+param set-default CA_ROTOR6_KM 0.00
+param set-default CA_ROTOR6_AX 1.0
+param set-default CA_ROTOR6_AY 0.0
+param set-default CA_ROTOR6_AZ 0.0
+
+
+param set-default CA_ROTOR7_PX 0.00
+param set-default CA_ROTOR7_PY 0.250
+param set-default CA_ROTOR7_KM 0.00
+param set-default CA_ROTOR7_AX 1.0
+param set-default CA_ROTOR7_AY 0.0
+param set-default CA_ROTOR7_AZ 0.0
+
 param set-default PWM_MAIN_FUNC1 101
 param set-default PWM_MAIN_FUNC2 102
 param set-default PWM_MAIN_FUNC3 103
 param set-default PWM_MAIN_FUNC4 104
 param set-default PWM_MAIN_FUNC5 105
 param set-default PWM_MAIN_FUNC6 106
+param set-default PWM_MAIN_FUNC7 107
+param set-default PWM_MAIN_FUNC8 108
+param set-default PWM_MAIN_FUNC9 201 #servo
+param set-default PWM_MAIN_FUNC10 202
+
+
+# # Limits for tilting angles
+# param set-default CA_SV_TL0_MAXA 30
+# param set-default CA_SV_TL0_MINA -30
+# param set-default CA_SV_TL1_MAXA 30
+# param set-default CA_SV_TL1_MINA -30
+# param set-default CA_SV_TL2_MAXA 30
+# param set-default CA_SV_TL2_MINA -30
+# param set-default CA_SV_TL3_MAXA 30
+# param set-default CA_SV_TL3_MINA -30
 
 #disable MC desaturation which improves attitude tracking
 param set-default CA_METHOD 0
@@ -49,7 +84,7 @@ param set-default FD_FAIL_P 0
 param set-default FD_FAIL_R 0
 
 #Set omni parameters
-param set VECTORING_ATT_MODE 1
+param set VECT_ATT_MODE 2
 
 set MIXER skip
 set MIXER_AUX none

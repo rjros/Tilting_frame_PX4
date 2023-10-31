@@ -556,13 +556,13 @@ void MulticopterPositionControl::Run()
 			_control.setState(states);
 
 			// Run position control
-			if (!_control.update(dt)) {
+			if (!_control.update(dt,_param_vectoring_att_mode.get())) {
 				// Failsafe
 				_vehicle_constraints = {0, NAN, NAN, false, {}}; // reset constraints
 
 				_control.setInputSetpoint(generateFailsafeSetpoint(vehicle_local_position.timestamp_sample, states, true));
 				_control.setVelocityLimits(_param_mpc_xy_vel_max.get(), _param_mpc_z_vel_max_up.get(), _param_mpc_z_vel_max_dn.get());
-				_control.update(dt);
+				_control.update(dt,_param_vectoring_att_mode.get());
 			}
 
 			// Publish internal position control setpoints
@@ -596,7 +596,8 @@ void MulticopterPositionControl::Run()
 			///////////////////////////////////////////////////////////
 			//Add condition for selecting between rc or saved condition
 			vectoring_status.att_mode = _param_vectoring_att_mode.get();
-			vectoring_status.att_mode=switches.vectoring_switch;
+			vectoring_status.manual_orientation = _param_vectoring_manual_dir.get();
+			//vectoring_status.att_mode=switches.vectoring_switch;
 			_thrust_vectoring_status_pub.publish(vectoring_status);
 
 			//Thrust vectoring parameters, changed by rc or by the QGroundControl

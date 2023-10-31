@@ -200,6 +200,8 @@ private:
 
 		// Omni-directional vehicle parameters
 		(ParamInt<px4::params::VECT_ATT_MODE>) _param_vectoring_att_mode,
+		//Manual control of the orientation
+		(ParamInt<px4::params::MAN_ATT_DIR>) _param_vectoring_manual_dir,
 		//Control mode with RC
 		(ParamInt<px4::params::RC_VECT_MODE_SW>) _param_vectoring_mode_sw
 	);
