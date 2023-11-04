@@ -165,22 +165,34 @@ void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//TEST Fixed Pitch Angle//
 	// zero vector, no direction, set safe level value
+	//The angles in the rotation could be use select the different modes
 	matrix::Dcmf _rotation,_rotation2;
 	_rotation = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, -yaw_sp}};
 	_rotation2 = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, yaw_sp}};
 	Vector3f body_x={0.0f,0.0f,0.0f};
+	//check the magnitude of the horizontal vector in the body frame
+	Vector3f thrust_sp_xy=_rotation * Vector3f{thr_sp(0),thr_sp(1),thr_sp(2)};
+	thrust_sp_xy(0)=thrust_sp_xy(0)*1.10f;
+	//PX4_INFO("Thrust in the setpoint %f %f %f ",(double)thr_sp(0),(double)thr_sp(1),(double)thr_sp(2));
+	thrust_sp_xy=_rotation2*Vector3f{thrust_sp_xy(0),thrust_sp_xy(1),thrust_sp_xy(2)};
+	//Increase the x axis by a X factor
+	// thrust_sp_xy.normalize();
+	//PX4_INFO("Thrust by factor %f %f %f ",(double)thrust_sp_xy(0),(double)thrust_sp_xy(1),(double)thrust_sp_xy(2));
+	//PX4_INFO("Thrust in body frame %f %f %f",(double)thrust_rotated(0),(double)thrust_rotated(1),(double)thrust_rotated(2));
 
-	Vector3f body_z=-thr_sp;// thrust vector that comes
+	// Vector3f body_z=-thr_sp;// thrust vector that comes
+	Vector3f body_z=-thrust_sp_xy;// thrust vector modified
+
 
 	//check thrust vector
 	Vector3f thrust_rotated = _rotation * matrix::Vector3f{(float)-body_z(0), (float)-body_z(1), (float)-body_z(2)};
-	thrust_rotated.normalize();
-	PX4_INFO("Thrust in body frame %f %f %f",(double)thrust_rotated(0),(double)thrust_rotated(1),(double)thrust_rotated(2));
+	// PX4_INFO("Thrust in body frame %f %f %f",(double)thrust_rotated(0),(double)thrust_rotated(1),(double)thrust_rotated(2));
 
 	if (thrust_rotated(0)>-0.001f) {
 	body_z=_rotation2*matrix::Vector3f{0.f, (float)-thrust_rotated(1),(float)-thrust_rotated(2)};
 	body_x = Vector3f(cos(yaw_sp), sin(yaw_sp), 0.0f);
 	body_z.normalize();
+
 
 	}
 
@@ -250,16 +262,20 @@ void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const 
 	// 	att_sp.thrust_body[2] = thr_sp.dot(body_z);
 	// }
 
-	att_sp.thrust_body[0] = thr_sp.dot(body_x);
-	att_sp.thrust_body[1] = thr_sp.dot(body_y);
-	att_sp.thrust_body[2] = thr_sp.dot(body_z);
+	// att_sp.thrust_body[0] = thr_sp.dot(body_x);
+	// att_sp.thrust_body[1] = thr_sp.dot(body_y);
+	// att_sp.thrust_body[2] = thr_sp.dot(body_z);
+	att_sp.thrust_body[0] = thrust_sp_xy.dot(body_x);
+	att_sp.thrust_body[1] = thrust_sp_xy.dot(body_y);
+	att_sp.thrust_body[2] = thrust_sp_xy.dot(body_z);
+
 
 	//Check thrust vector in the body frame
-	Vector3f thrust_body= {att_sp.thrust_body[0],att_sp.thrust_body[1],att_sp.thrust_body[2]};
-	Vector3f thrust_body_rotated=  _rotation * thrust_body;
+	// Vector3f thrust_body= {att_sp.thrust_body[0],att_sp.thrust_body[1],att_sp.thrust_body[2]};
+	// Vector3f thrust_body_rotated=  _rotation * thrust_body;
 	//PX4_INFO("Constant x, y ,z %f %f %f",(double)att_sp.roll_body,(double)att_sp.pitch_body,(double)att_sp.yaw_body);
 	// PX4_INFO("New Body x %f %f %f",(double)body_x(0),(double)body_x(1),(double)body_x(2));
-	PX4_INFO("New Thrust Components %f %f %f",(double) thrust_body_rotated(0),(double)thrust_body_rotated(1),(double)thrust_body_rotated(2));
+	//PX4_INFO("New Thrust Components %f %f %f",(double) thrust_body_rotated(0),(double)thrust_body_rotated(1),(double)thrust_body_rotated(2));
 
 }
 

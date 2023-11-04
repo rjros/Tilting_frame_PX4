@@ -223,6 +223,8 @@ ControlAllocator::update_CA_manual_mode()
 			break;
 		case CA_ManMode::FORWARD:
 			PX4_INFO("Forward Mode");
+			//test On and off for the edfs
+
 			break;
 
 		case CA_ManMode::BACKWARD:
@@ -396,11 +398,13 @@ ControlAllocator::Run()
 #endif
 
 	//PX4_INFO("checking looping");
+	const EffectivenessSource source = (EffectivenessSource)_param_ca_airframe.get();
+	parameter_update_s param_update;
+
 
 	// Check if parameters have changed
 	if (_parameter_update_sub.updated() && !_armed) {
 		// clear update
-		parameter_update_s param_update;
 		_parameter_update_sub.copy(&param_update);
 
 		if (_handled_motor_failure_bitmask == 0) {
@@ -466,6 +470,9 @@ ControlAllocator::Run()
 
 	/*** CUSTOM ***/
 	thrust_vectoring_attitude_status_s thrust_vec_status;
+	matrix::Vector<float, NUM_ACTUATORS> vertical_actuator_sp;
+	matrix::Vector<float, NUM_ACTUATORS> lateral_actuator_sp;
+	matrix::Vector<float, NUM_ACTUATORS> actuator_sp;
 	/*** END-CUSTOM ***/
 
 
@@ -493,11 +500,11 @@ ControlAllocator::Run()
 		_last_run = now;
 
 		check_for_motor_failures();
-		new_mode= update_CA_manual_mode();
-		if(new_mode){
+		// new_mode= update_CA_manual_mode();
+		// if(new_mode){
 
-			PX4_INFO("Mode has been changed");// change the effectivenss matrix shape
-		}
+		// 	PX4_INFO("Mode has been changed");// change the effectivenss matrix shape
+		// }
 
 		// update the matrix since the pos changed, or do so in the do_update time
 		// call a function that receives the angle and uses it for the new axis orientation
@@ -511,12 +518,25 @@ ControlAllocator::Run()
 		switch (thrust_vec_status.manual_orientation) {
 			case 0:
 				PX4_INFO("NONE");
+				update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::MANUAL_ANGLE_CHANGE);
+				_parameter_update_sub.copy(&param_update);
+				// We don't update the geometry after an actuator failure, as it could lead to unexpected results
+				// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+				PX4_INFO("checking if it changes effectiveness");
+				updateParams();
+				parameters_updated();
 
-				mode_value=0;
 				break;
 			case 1:
 				PX4_INFO("Forward Mode");
-				mode_value=1;
+				update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::MANUAL_ANGLE_CHANGE);
+				_parameter_update_sub.copy(&param_update);
+				// We don't update the geometry after an actuator failure, as it could lead to unexpected results
+				// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+				PX4_INFO("checking if it changes effectiveness");
+				updateParams();
+				parameters_updated();
+
 				break;
 
 			case 2:
@@ -539,7 +559,7 @@ ControlAllocator::Run()
 
 		//PX4_INFO("checking if it changes effectiveness do ");
 		//place condition here for updating the matrix
-		update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
+		// update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
 
 		// Set control setpoint vector(s)
 		matrix::Vector<float, NUM_AXES> c[ActuatorEffectiveness::MAX_NUM_MATRICES];
@@ -557,15 +577,12 @@ ControlAllocator::Run()
 		// Here the torque_sp seems to be between 0 and 1
 		/*** END-CUSTOM ***/
 
-
 		// Would be interesting to separate the matrix based on the task
 		//Use fixed propellers for X task and the remaing tilting propellers
 		//could be use for another task. Keeping the flight and task stable
 
 		//In the px4_tilting the control allocator checks the source first
-
 		//if (source!=EffectivenessSource::Thrust_Vectoring_Mode)
-
 		if (_num_control_allocation > 1) {
 			if (_vehicle_torque_setpoint1_sub.copy(&vehicle_torque_setpoint)) {
 				c[1](0) = vehicle_torque_setpoint.xyz[0];
@@ -580,22 +597,54 @@ ControlAllocator::Run()
 			}
 		}
 
-		for (int i = 0; i < _num_control_allocation; ++i) {
+		/*** CUSTOM ***/
+		if( source != EffectivenessSource::THRUST_VECTORING_MC ||
+		   ( source == EffectivenessSource::THRUST_VECTORING_MC &&
+		     _num_control_allocation == 1 ) )
+		{
+			// PX4_INFO("Control Allocation Number %d ", _num_control_allocation);
 
-			_control_allocation[i]->setControlSetpoint(c[i]);
 
-			// Do allocation
-			_control_allocation[i]->allocate();
-			_actuator_effectiveness->allocateAuxilaryControls(dt, i, _control_allocation[i]->_actuator_sp); //flaps and spoilers
-			_actuator_effectiveness->updateSetpoint(c[i], i, _control_allocation[i]->_actuator_sp,
-								_control_allocation[i]->getActuatorMin(), _control_allocation[i]->getActuatorMax());
+			for (int i = 0; i < _num_control_allocation; ++i) {
 
-			if (_has_slew_rate) {
-				_control_allocation[i]->applySlewRateLimit(dt);
-			}
+				_control_allocation[i]->setControlSetpoint(c[i]);
 
-			_control_allocation[i]->clipActuatorSetpoint();
+				// Do allocation
+				_control_allocation[i]->allocate();
+				_actuator_effectiveness->allocateAuxilaryControls(dt, i, _control_allocation[i]->_actuator_sp); //flaps and spoilers
+				_actuator_effectiveness->updateSetpoint(c[i], i, _control_allocation[i]->_actuator_sp,
+									_control_allocation[i]->getActuatorMin(), _control_allocation[i]->getActuatorMax());
+
+				if (_has_slew_rate) {
+					_control_allocation[i]->applySlewRateLimit(dt);
+				}
+
+				_control_allocation[i]->clipActuatorSetpoint();
+				}
 		}
+		else {
+			// PX4_INFO( "Multiple allocation %d ", _num_control_allocation);
+
+			//Vertical forces
+			_control_allocation[0]->setControlSetpoint(c[0]);
+			_control_allocation[0]->allocate();
+			vertical_actuator_sp = _control_allocation[0]->getActuatorSetpoint();
+
+			//Lateral forces
+			_control_allocation[1]->setControlSetpoint(c[0]);
+			_control_allocation[1]->allocate();
+			lateral_actuator_sp = _control_allocation[1]->getActuatorSetpoint();//_control_allocation[1]->getActuatorSetpoint();
+			// PX4_INFO("v_sp %d : %f ", 0, (double)lateral_actuator_sp(0));
+
+			//Rotors
+			for(int i=0; i<_num_actuators[0]; i++){
+
+				actuator_sp(i) = sqrtf( sqrtf( powf(vertical_actuator_sp(i),2) + powf(lateral_actuator_sp(i),2) ) );
+				// actuator_sp(i) = vertical_actuator_sp(i) + lateral_actuator_sp(i);
+				//PX4_INFO("motor: %f ", (double)actuator_sp(i));
+			}
+		}
+
 	}
 
 	// Publish actuator setpoint and allocator status
@@ -649,7 +698,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 			for (int actuator_type_idx = 0; actuator_type_idx < config.num_actuators[actuator_type]; ++actuator_type_idx) {
 				if (actuator_idx >= NUM_ACTUATORS) {
 					_num_actuators[actuator_type] = 0;
-					PX4_ERR("Too many actuators");
+					PX4_ERR("Too many actuators %d" , actuator_idx);
 					break;
 				}
 
@@ -657,7 +706,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
 				// sanity check for max motors
 				if ((ActuatorType)actuator_type == ActuatorType::MOTORS) {
 					if (actuator_type_idx >= MAX_NUM_MOTORS) {
-						PX4_ERR("Too many motors");
+						PX4_ERR("Too many motors ");
 						_num_actuators[actuator_type] = 0;
 						break;
 					}
@@ -805,10 +854,12 @@ ControlAllocator::publish_control_allocator_status(int matrix_index)
 void
 ControlAllocator::publish_actuator_controls()
 {
+	// Control how the actuators are used in the system
 	if (!_publish_controls) {
 		return;
 	}
 
+	//Is it needed to add a diff motor type?
 	actuator_motors_s actuator_motors;
 	actuator_motors.timestamp = hrt_absolute_time();
 	actuator_motors.timestamp_sample = _timestamp_sample;

@@ -40,6 +40,7 @@ int ActuatorEffectiveness::Configuration::addActuator(ActuatorType type, const m
 		const matrix::Vector3f &thrust)
 {
 	int actuator_idx = num_actuators_matrix[selected_matrix];
+	PX4_INFO("Selected matrix %d ",selected_matrix);
 
 	if (actuator_idx >= NUM_ACTUATORS) {
 		PX4_ERR("Too many actuators");

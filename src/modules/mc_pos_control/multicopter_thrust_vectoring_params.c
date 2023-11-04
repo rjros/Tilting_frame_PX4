@@ -59,9 +59,10 @@ PARAM_DEFINE_INT32(VECT_ATT_MODE, 0);
  * Manual orientation
  *
  * @min 0
- * @max 2
- * @value 0 Forward
- * @value 1 Backward
+ * @max 3
+ * @value 0 None
+ * @value 1 Forward
+ * @value 2 Backward
  * @value 2 CCW
  */
 PARAM_DEFINE_INT32(MAN_ATT_DIR, 0);

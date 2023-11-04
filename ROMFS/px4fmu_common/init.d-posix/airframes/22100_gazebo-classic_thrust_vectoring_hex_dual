@@ -11,10 +11,11 @@
 
 #Frame Configuration information
 #param set-default MAV_TYPE 13
-param set-default CA_ROTOR_COUNT 8
-# set PWM_AUX_OUT 1234
 
 param set-default CA_AIRFRAME 12
+
+set PWM_AUX_OUT 1234
+param set-default CA_ROTOR_COUNT 8
 param set-default CA_SV_TL_COUNT 2
 
 
@@ -53,6 +54,11 @@ param set-default CA_ROTOR7_KM 0.00
 param set-default CA_ROTOR7_AX 1.0
 param set-default CA_ROTOR7_AY 0.0
 param set-default CA_ROTOR7_AZ 0.0
+
+
+# #TILT PARAMS
+# param set-default CA_ROTOR6_TILT 1
+# param set-default CA_ROTOR7_TILT 2
 
 param set-default PWM_MAIN_FUNC1 101
 param set-default PWM_MAIN_FUNC2 102

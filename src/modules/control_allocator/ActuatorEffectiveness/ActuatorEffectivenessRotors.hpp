@@ -47,6 +47,10 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionInterval.hpp>
 
+///CUSTOM///
+#include <uORB/topics/thrust_vectoring_attitude_status.h>
+///END///
+
 class ActuatorEffectivenessTilts;
 
 using namespace time_literals;
@@ -102,9 +106,9 @@ public:
 	}
 
 	static int computeEffectivenessMatrix(const Geometry &geometry,
-					      EffectivenessMatrix &effectiveness, int actuator_start_index = 0);
+					      EffectivenessMatrix &effectiveness, int actuator_start_index = 0,bool tiltable_matrix=false,int angle_test=0);
 
-	bool addActuators(Configuration &configuration);
+	bool addActuators(Configuration &configuration,bool tiltable=0);
 
 	const char *name() const override { return "Rotors"; }
 
@@ -135,6 +139,14 @@ public:
 	uint32_t getMotors() const;
 	uint32_t getUpwardsMotors() const;
 	uint32_t getForwardsMotors() const;
+	uint32_t _num_tilted_rotors {2}; //total number tilted motors
+	uint32_t tiltable_index {6}; //value from the first tiltable motor
+	thrust_vectoring_attitude_status_s thrust_vec_status;
+
+	uORB::Subscription _thrust_vectoring_status_sub{ORB_ID(thrust_vectoring_attitude_status)};
+
+
+
 
 private:
 	void updateParams() override;
@@ -160,6 +172,7 @@ private:
 	};
 	ParamHandles _param_handles[NUM_ROTORS_MAX];
 	param_t _count_handle;
-
 	Geometry _geometry{};
+
+
 };
