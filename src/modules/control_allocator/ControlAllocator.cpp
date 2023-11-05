@@ -470,8 +470,6 @@ ControlAllocator::Run()
 
 	/*** CUSTOM ***/
 	thrust_vectoring_attitude_status_s thrust_vec_status;
-	matrix::Vector<float, NUM_ACTUATORS> vertical_actuator_sp;
-	matrix::Vector<float, NUM_ACTUATORS> lateral_actuator_sp;
 	matrix::Vector<float, NUM_ACTUATORS> actuator_sp;
 	/*** END-CUSTOM ***/
 
@@ -522,6 +520,7 @@ ControlAllocator::Run()
 				_parameter_update_sub.copy(&param_update);
 				// We don't update the geometry after an actuator failure, as it could lead to unexpected results
 				// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+				tilt_angle=0;//degrees
 				PX4_INFO("checking if it changes effectiveness");
 				updateParams();
 				parameters_updated();
@@ -529,6 +528,7 @@ ControlAllocator::Run()
 				break;
 			case 1:
 				PX4_INFO("Forward Mode");
+				tilt_angle=1.57; //45 degrees
 				update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::MANUAL_ANGLE_CHANGE);
 				_parameter_update_sub.copy(&param_update);
 				// We don't update the geometry after an actuator failure, as it could lead to unexpected results
@@ -596,13 +596,14 @@ ControlAllocator::Run()
 				c[1](5) = vehicle_thrust_setpoint.xyz[2];
 			}
 		}
+		// PX4_INFO("Control Allocation Number %d ", _num_control_allocation);
 
 		/*** CUSTOM ***/
 		if( source != EffectivenessSource::THRUST_VECTORING_MC ||
 		   ( source == EffectivenessSource::THRUST_VECTORING_MC &&
 		     _num_control_allocation == 1 ) )
 		{
-			// PX4_INFO("Control Allocation Number %d ", _num_control_allocation);
+			// PX4_INFO("Control Allocation Number %d ", _num_actuators[1]);
 
 
 			for (int i = 0; i < _num_control_allocation; ++i) {
@@ -620,30 +621,75 @@ ControlAllocator::Run()
 				}
 
 				_control_allocation[i]->clipActuatorSetpoint();
+				//check if missing commands
 				}
 		}
 		else {
-			// PX4_INFO( "Multiple allocation %d ", _num_control_allocation);
 
-			//Vertical forces
-			_control_allocation[0]->setControlSetpoint(c[0]);
-			_control_allocation[0]->allocate();
-			vertical_actuator_sp = _control_allocation[0]->getActuatorSetpoint();
+				_control_allocation[0]->setControlSetpoint(c[0]);
+				// Do allocation
+				_control_allocation[0]->allocate();
+				actuator_sp = _control_allocation[0]->getActuatorSetpoint();
 
-			//Lateral forces
-			_control_allocation[1]->setControlSetpoint(c[0]);
-			_control_allocation[1]->allocate();
-			lateral_actuator_sp = _control_allocation[1]->getActuatorSetpoint();//_control_allocation[1]->getActuatorSetpoint();
-			// PX4_INFO("v_sp %d : %f ", 0, (double)lateral_actuator_sp(0));
 
-			//Rotors
-			for(int i=0; i<_num_actuators[0]; i++){
+				//Tilts for testing purposes
+				//fix later to consider different geometries
+				// for(int i=8; i<10; i++){
+				// 	actuator_sp(i) = tilt_angle;
+				// }
+				actuator_sp(8)=-tilt_angle;
+				actuator_sp(9)=tilt_angle;
+				_control_allocation[1]->setActuatorSetpoint(servo_sp);
 
-				actuator_sp(i) = sqrtf( sqrtf( powf(vertical_actuator_sp(i),2) + powf(lateral_actuator_sp(i),2) ) );
-				// actuator_sp(i) = vertical_actuator_sp(i) + lateral_actuator_sp(i);
-				//PX4_INFO("motor: %f ", (double)actuator_sp(i));
-			}
+				matrix::Vector<float, NUM_ACTUATORS> actuatorMax, actuatorMin;
+				matrix::Vector<float, NUM_ACTUATORS> servoMax, servoMin;
+
+				for(int i=0; i<_num_actuators[0]; i++){
+					actuatorMax(i) = 1.0f;
+					actuatorMin(i) = 0.00f;
+				}
+
+				for(int i=_num_actuators[0]; i<(_num_actuators[0]+_num_actuators[1]); i++){
+					// PX4_INFO("Actuator servo %d", i);
+					actuatorMax(i) =  1.0f;
+					actuatorMin(i) = -1.0f;
+				}
+				_control_allocation[0]->setActuatorMax(actuatorMax);
+				_control_allocation[0]->setActuatorMin(actuatorMin);
+
+				_control_allocation[0]->setActuatorSetpoint(actuator_sp);
+				_control_allocation[1]->setActuatorSetpoint(servo_sp);
+
+				_actuator_effectiveness->updateSetpoint(c[0], 0, _control_allocation[0]->_actuator_sp,
+									_control_allocation[0]->getActuatorMin(), _control_allocation[0]->getActuatorMax());
+
+				_actuator_effectiveness->updateSetpoint(c[1], 1, _control_allocation[1]->_actuator_sp,
+									_control_allocation[1]->getActuatorMin(), _control_allocation[1]->getActuatorMax());
+				if (_has_slew_rate) {
+				_control_allocation[0]->applySlewRateLimit(dt);
+
+				}
+
+				_control_allocation[0]->clipActuatorSetpoint();
+
+
+			// // PX4_INFO( "Multiple allocation %d ", _num_control_allocation);
+
+			// //Vertical forces
+			// _control_allocation[0]->setControlSetpoint(c[0]);
+			// _control_allocation[0]->allocate();
+			// vertical_actuator_sp = _control_allocation[0]->getActuatorSetpoint();
+
+			// //Lateral forces
+			// _control_allocation[1]->setControlSetpoint(c[0]);
+			// _control_allocation[1]->allocate();
+			// lateral_actuator_sp = _control_allocation[1]->getActuatorSetpoint();//_control_allocation[1]->getActuatorSetpoint();
+			// // PX4_INFO("v_sp %d : %f ", 0, (double)lateral_actuator_sp(0));
+
+
 		}
+
+
 
 	}
 
@@ -665,6 +711,8 @@ ControlAllocator::Run()
 	perf_end(_loop_perf);
 }
 
+//Just update the desired matrix instead all of the actuators
+//E.g. just the tiltable rotors positions, advantage of using two matrices
 void
 ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReason reason)
 {

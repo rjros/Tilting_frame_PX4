@@ -46,41 +46,19 @@ using namespace matrix;
 
 ActuatorEffectivenessThrustVectoringMC::ActuatorEffectivenessThrustVectoringMC(ModuleParams *parent)
 	: ModuleParams(parent),
-	_mc_rotors_fixed(this),
-	_mc_rotors_tilted(this)
+	_mc_rotors_fixed(this, ActuatorEffectivenessRotors::AxisConfiguration::Configurable, true),
+	_tilts(this)
 	{
+		updateParams();
 	}
 
-	  // Thr UAV has two type of rotors
-	  //First make sure normal mode works
-	  // Rotors with a fixed orientation
-	  // Rotors with a tilted orientation axis should be configurable
-// 	// _mc_rotors_fixed(this, ActuatorEffectivenessRotors::AxisConfiguration::FixedUpwards, true),
-// 	//_mc_rotors_tiltable(this, ActuatorEffectivenessRotors::AxisConfiguration::FixedUpwards, true),
-// 	//_tilts(this)
-// {
-// 	// _rotors_fixed_added_succesfully=false;
-// 	// //_rotors_tilted_added_succesfully=false;
-// 	// //_tilts_added_succesfully=false;
-
-// 	// // Is this needed?
-// 	// //_tilting_type_handle = param_find("CA_ATTITUDE_MODE");
-// 	// //_servo_count_handle =param_find("CA_SV_TL_COUNT");
-// 	// updateParams();
-// }
-
-
+//Update parameters
 void ActuatorEffectivenessThrustVectoringMC::updateParams()
 {
-	// Check update for:
-	//tilt angle, tilting mode, and force mode
 	ModuleParams::updateParams();
-	PX4_INFO("Thrust vector updated");
-	//Check current tilting mode
-	// if(param_get(_tilting_type_handle,&_tilting_type)!=0){
-	// 	PX4_ERR("Error in tilting type");
-	// 	return;
-	// }
+	PX4_INFO("Updated params in Thrust Vectoring Effectivness Matrix");
+	// _mc_rotors_fixed=new ActuatorEffectivenessRotors(this,ActuatorEffectivenessRotors::AxisConfiguration::FixedUpwards,false);
+	// _mc_rotors_tilted= new ActuatorEffectivenessRotors(this,ActuatorEffectivenessRotors::AxisConfiguration::FixedUpwards,false);
 }
 
 
@@ -92,95 +70,52 @@ ActuatorEffectivenessThrustVectoringMC::getEffectivenessMatrix(Configuration &co
 		return false;
 	}
 
-	//Flags for each matrix [[fixed],[tilted]]
-	bool _rotors_fixed_added_succesfully{0};
-	bool _rotors_tilted_added_succesfully{0};
+	// //Flags for each matrix [[fixed],[tilted]]
+	//_rotors_fixed_added_succesfully=false;
+	// _rotors_tilted_added_succesfully=false;
 
 	// Compare with multiple allocation matrices
 	//Fixed Motors Control
 	configuration.selected_matrix=0; //< chooses the matrix to be used
-	_rotors_fixed_added_succesfully = _mc_rotors_fixed.addActuators(configuration);
-
-	//Tiltable rotors control
-	configuration.selected_matrix=1;//< thrust vectoring motors
-	_rotors_tilted_added_succesfully=_mc_rotors_tilted.addActuators(configuration);
-
-	*configuration.num_actuators /=2;
+	//_mc_rotors_fixed.enableYawByDifferentialThrust(false);
+	_rotors_fixed_added_succesfully = _mc_rotors_fixed.addActuators(configuration,false);
+	// PX4_INFO("Configuration Num actuators fixed  is %d ",*configuration.num_actuators);
 
 
-	// //Allow for yaw motion by differential thrust
-	// _mc_rotors_fixed.enableYawByDifferentialThrust(!_tilts.hasYawControl());
-	// // const bool rotors_added_successfully = _mc_rotors_fixed.addActuators(configuration);
+	// //Tiltable rotors control
+	// configuration.selected_matrix=1;//< thrust vectoring motors
+	// _rotors_tilted_added_succesfully=_mc_rotors_tilted.addActuators(configuration,true);
+	// // PX4_INFO("Configuration Num actuators tilted is %d ",*configuration.num_actuators);
 
-	// // Tilts
-	// configuration.selected_matrix=1;
-	// _first_tilt_idx = configuration.num_actuators_matrix[0];
-	// _tilts.updateTorqueSign(_mc_rotors_tiltable.geometry());
-	// _tilts_added_succesfully = _tilts.addActuators(configuration);
+	// *configuration.num_actuators/=2;
 
-	// // Set offset such that tilts point upwards when control input == 0 (trim is 0 if min_angle == -max_angle).
-	// // Note that we don't set configuration.trim here, because in the case of trim == +-1, yaw is always saturated
-	// // and reduced to 0 with the sequential desaturation method. Instead we add it after.
-	// _tilt_offsets.setZero();
 
-	// for (int i = 0; i < _tilts.count(); ++i) {
-	// 	float delta_angle = _tilts.config(i).max_angle - _tilts.config(i).min_angle;
+	// PX4_INFO("Configuration Num actuators is %d ",*configuration.num_actuators);
 
-	// 	if (delta_angle > FLT_EPSILON) {
-	// 		float trim = -1.f - 2.f * _tilts.config(i).min_angle / delta_angle;
-	// 		_tilt_offsets(_first_tilt_idx + i) = trim;
-	// 	}
-	// }
+	//Tilts, servos
+	configuration.selected_matrix=0;
+	_first_tilt_idx = configuration.num_actuators_matrix[configuration.selected_matrix];
+	// _tilts.updateTorqueSign(_mc_rotors_fixed.geometry());
+	_tilts_added_succesfully = _tilts.addActuators(configuration);
 
-	return (_rotors_tilted_added_succesfully && _rotors_fixed_added_succesfully);
+
+
+	return (_rotors_fixed_added_succesfully && _tilts_added_succesfully);
 }
 
-// void ActuatorEffectivenessThrustVectoringMC::updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp,
-// 		int matrix_index, ActuatorVector &actuator_sp, const matrix::Vector<float, NUM_ACTUATORS> &actuator_min,
-// 		const matrix::Vector<float, NUM_ACTUATORS> &actuator_max)
-// {
-
-// 	// apply tilt
-// 	if (matrix_index == 1) {
-// 		actuator_controls_s actuator_controls_1;
-// 		if (_actuator_controls_1_sub.copy(&actuator_controls_1)) {
-// 			float control_tilt = actuator_controls_1.control[4] * 2.f - 1.f;
-
-// 			// set control_tilt to exactly -1 or 1 if close to these end points
-// 			control_tilt = control_tilt < -0.99f ? -1.f : control_tilt;
-// 			control_tilt = control_tilt > 0.99f ? 1.f : control_tilt;
-
-// 			// initialize _last_tilt_control
-// 			if (!PX4_ISFINITE(_last_tilt_control)) {
-// 				_last_tilt_control = control_tilt;
-
-// 			} else if (fabsf(control_tilt - _last_tilt_control) > 0.01f) {
-// 				_combined_tilt_updated = true;
-// 				_last_tilt_control = control_tilt;
-// 			}
-
-// 			for (int i = 0; i < _tilts.count(); ++i) {
-// 				if (_tilts.config(i).tilt_direction == ActuatorEffectivenessTilts::TiltDirection::TowardsFront) {
-// 					actuator_sp(i + _first_tilt_idx) += control_tilt;
-// 				}
-// 			}
-// 		}
-// 	}
+void ActuatorEffectivenessThrustVectoringMC::updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp,
+		int matrix_index, ActuatorVector &actuator_sp, const matrix::Vector<float, NUM_ACTUATORS> &actuator_min,
+		const matrix::Vector<float, NUM_ACTUATORS> &actuator_max)
+{
+	//matrix with the tiltable actuators
+	if (matrix_index == 1){
+		for(int i=0; i<_tilts.count(); i++){
+		actuator_sp(i) = actuator_sp(i) <  math::radians(_tilts.config(i).min_angle) ?  math::radians(_tilts.config(i).min_angle) : actuator_sp(i);
+		actuator_sp(i) = actuator_sp(i) >  math::radians(_tilts.config(i).max_angle) ? math::radians(_tilts.config(i).max_angle) : actuator_sp(i);
+		// PX4_INFO("%d) tilt_sp: %f", i, (double)actuator_sp(i));
+		}
+	}
 
 
-// }
+}
 
-// void ActuatorEffectivenessThrustVectoringMC::getUnallocatedControl(int matrix_index, control_allocator_status_s &status)
-// {
-// 	// Note: the values '-1', '1' and '0' are just to indicate a negative,
-// 	// positive or no saturation to the rate controller. The actual magnitude is not used.
-// 	if (_yaw_tilt_saturation_flags.tilt_yaw_pos) {
-// 		status.unallocated_torque[2] = 1.f;
-
-// 	} else if (_yaw_tilt_saturation_flags.tilt_yaw_neg) {
-// 		status.unallocated_torque[2] = -1.f;
-
-// 	} else {
-// 		status.unallocated_torque[2] = 0.f;
-// 	}
-// }

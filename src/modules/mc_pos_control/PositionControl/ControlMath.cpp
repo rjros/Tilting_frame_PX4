@@ -307,9 +307,9 @@ void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpo
 	_rotation = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, -yaw_sp}};//rotation to the body frame
 	// _rotation2 = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, yaw_sp}};
 	//check thrust vector
-	Vector3f thrust_rotated = _rotation * matrix::Vector3f{(float)-body_z(0), (float)-body_z(1), 0};
-	PX4_INFO("Thrust in body z  %f %f %f",(double)body_z(0),(double)body_z(1),(double)body_z(2));
-	PX4_INFO("Thrust in body frame 0 deg %f %f %f",(double)thrust_rotated(0),(double)thrust_rotated(1),(double)thrust_rotated(2));
+	// Vector3f thrust_rotated = _rotation * matrix::Vector3f{(float)-body_z(0), (float)-body_z(1), 0};
+	// PX4_INFO("Thrust in body z  %f %f %f",(double)body_z(0),(double)body_z(1),(double)body_z(2));
+	// PX4_INFO("Thrust in body frame 0 deg %f %f %f",(double)thrust_rotated(0),(double)thrust_rotated(1),(double)thrust_rotated(2));
 
 	// Vector3f thrust_fixed=_rotation2*matrix::Vector3f{0.0f, (float)thrust_rotated(1),(float)thrust_rotated(2)};
 	// thrust_fixed.normalize();

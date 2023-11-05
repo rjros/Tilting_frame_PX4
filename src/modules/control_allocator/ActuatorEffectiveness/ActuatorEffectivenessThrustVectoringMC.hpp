@@ -38,8 +38,7 @@
 #include "ActuatorEffectivenessTilts.hpp"
 
 #include <px4_platform_common/module_params.h>
-//#include <uORB/topics/actuator_controls.h>
-//#include <uORB/Subscription.hpp>
+#include <uORB/Subscription.hpp>
 
 class ActuatorEffectivenessThrustVectoringMC : public ModuleParams, public ActuatorEffectiveness
 {
@@ -48,20 +47,26 @@ public:
 	virtual ~ActuatorEffectivenessThrustVectoringMC() = default;
 
 	bool getEffectivenessMatrix(Configuration &configuration, EffectivenessUpdateReason external_update) override;
+	//Use for each of the allocated rotors, [fixed,tilted]
+	int numMatrices() const override { return 2; }
+
 
 	void getDesiredAllocationMethod(AllocationMethod allocation_method_out[MAX_NUM_MATRICES]) const override
 	{
 		allocation_method_out[0] = AllocationMethod::SEQUENTIAL_DESATURATION;
-	}
+		allocation_method_out[1] = AllocationMethod::SEQUENTIAL_DESATURATION;
 
+	}
 	void getNormalizeRPY(bool normalize[MAX_NUM_MATRICES]) const override
 	{
 		normalize[0] = true;
+		normalize[1] = true;
+
 	}
 
-	// void updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp, int matrix_index,
-	// 		    ActuatorVector &actuator_sp, const matrix::Vector<float, NUM_ACTUATORS> &actuator_min,
-	// 		    const matrix::Vector<float, NUM_ACTUATORS> &actuator_max) override;
+	void updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp, int matrix_index,
+			    ActuatorVector &actuator_sp, const matrix::Vector<float, NUM_ACTUATORS> &actuator_min,
+			    const matrix::Vector<float, NUM_ACTUATORS> &actuator_max) override;
 
 	const char *name() const override { return "Thrust Vectoring MC"; }
 
@@ -72,8 +77,9 @@ protected:
 	void updateParams() override;
 	// ActuatorVector _tilt_offsets;
 	ActuatorEffectivenessRotors _mc_rotors_fixed; //< UAV rotors
-	ActuatorEffectivenessRotors _mc_rotors_tilted;//< Thrustvectoring device rotors
-	// ActuatorEffectivenessTilts _tilts;//< Servos attached to actuators
+
+	// ActuatorEffectivenessRotors _mc_rotors_tilted;//< Thrustvectoring device rotors
+	ActuatorEffectivenessTilts _tilts;//< Servos attached to actuators
 	// struct YawTiltSaturationFlags {
 	// 	bool tilt_yaw_pos;
 	// 	bool tilt_yaw_neg;
@@ -82,16 +88,15 @@ protected:
 	// YawTiltSaturationFlags _yaw_tilt_saturation_flags{};
 
 	// int32_t _attitude_mode_handle;
-	// int _first_tilt_idx{0}; ///< applies to matrix 1, thrust vectoring components
-	// param_t _tilting_type_handle;//< parameter with the CA_attitude_mode
-	// int32_t _tilting_type{0};//< 0 -> normal uav tilting, 1-> vectoring mode
-	// param_t _servo_count_handle; //< number of servos
-	// bool _rotors_fixed_added_succesfully{0};
-	// bool _rotors_tilted_added_succesfully{0};
-	// bool _tilts_added_succesfully{0};
+	int _first_tilt_idx{0}; ///< applies to matrix 1, thrust vectoring components
+	param_t _tilting_type_handle;//< parameter with the CA_attitude_mode
+	int32_t _tilting_type{0};//< 0 -> normal uav tilting, 1-> vectoring mode
+	param_t _servo_count_handle; //< number of servos
+	bool _rotors_fixed_added_succesfully{0};
+	bool _rotors_tilted_added_succesfully{0};
+	bool _tilts_added_succesfully{0};
 	// float _last_tilt_control{NAN};
 
-	// //subscribe current desired servo values
-	// //uORB::Subscription _actuator_controls_1_sub{ORB_ID(actuator_controls_1)};
+	//subscribe current desired servo values
 
 };

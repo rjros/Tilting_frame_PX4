@@ -1259,8 +1259,5 @@ mixer:
                             label: "Angle at Max\nTilt"
                           - name: 'CA_SV_TL${i}_TD'
                             label: 'Tilt Direction'
-                          - name: 'CA_SV_TL${i}_CT'
-                            label: 'Use for Control'
-
             # *** END-CUSTOM ***
 ###############################################################################################
