@@ -119,7 +119,7 @@ px4_add_romfs_files(
 	50000_generic_ground_vehicle
 	50004_nxpcup_car_dfrobot_gpx
 	50003_aion_robotics_r1_rover
-	25003_NDT_tilting
+	# 25003_NDT_tilting
 
 
 	# [60000, 61000] (Unmanned) Underwater Robots
