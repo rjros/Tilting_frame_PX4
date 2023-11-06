@@ -672,6 +672,9 @@ ControlAllocator::Run()
 
 				_control_allocation[0]->clipActuatorSetpoint();
 
+			//Double Matrix approach
+			//where one handles the tilting and the other handles the fixed
+
 
 			// // PX4_INFO( "Multiple allocation %d ", _num_control_allocation);
 
