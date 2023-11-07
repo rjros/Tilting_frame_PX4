@@ -157,10 +157,35 @@ ActuatorEffectivenessRotors::addActuators(Configuration &configuration,bool tilt
 		return false;
 	}
 
-	int angle_test=0;
-	//check the current value of the man orientation'
 
-	angle_test=thrust_vec_status.manual_orientation;
+	_thrust_vectoring_status_sub.copy(&thrust_vec_status);
+	float tilt_angle=0;
+	int att_tilt_mode=0;
+
+	//Check the current attitude mode of the system
+	if (thrust_vec_status.att_mode<2)
+		{
+			att_tilt_mode=1;
+		}
+	//check the current value of the man orientation
+	switch (thrust_vec_status.manual_orientation) {
+			case 0:
+				tilt_angle=0;//
+				break;
+			case 1:
+				tilt_angle=thrust_vec_status.forward_angle; //
+				break;
+
+			case 2:
+				tilt_angle=thrust_vec_status.backward_angle; //
+				break;
+			case 3:
+				tilt_angle=thrust_vec_status.backward_angle; //radians
+
+				break;
+			default:
+				tilt_angle=0;//radians
+	}
 
 	//Fixed Propellers
 	int num_actuators=0;
@@ -168,7 +193,7 @@ ActuatorEffectivenessRotors::addActuators(Configuration &configuration,bool tilt
 		//vertical forces
 		num_actuators = computeEffectivenessMatrix(_geometry,
 			    configuration.effectiveness_matrices[configuration.selected_matrix],
-			    configuration.num_actuators_matrix[configuration.selected_matrix],tiltable,angle_test);
+			    configuration.num_actuators_matrix[configuration.selected_matrix],tiltable,tilt_angle,att_tilt_mode);
 
 	// PX4_INFO("Vertical Forces \n");
 	// PX4_INFO("num_actuators: %d  \n", num_actuators);
@@ -179,7 +204,7 @@ ActuatorEffectivenessRotors::addActuators(Configuration &configuration,bool tilt
 		//Tilting forces
 		num_actuators = computeEffectivenessMatrix(_geometry,
 		configuration.effectiveness_matrices[configuration.selected_matrix],
-		configuration.num_actuators_matrix[configuration.selected_matrix],tiltable,angle_test);
+		configuration.num_actuators_matrix[configuration.selected_matrix],tiltable,tilt_angle);
 	// PX4_INFO("Tilting Forces \n");
 	// PX4_INFO("num_actuators: %d \n matrix ", num_actuators);
 	}
@@ -191,290 +216,125 @@ ActuatorEffectivenessRotors::addActuators(Configuration &configuration,bool tilt
 
 int
 ActuatorEffectivenessRotors::computeEffectivenessMatrix(const Geometry &geometry,
-		EffectivenessMatrix &effectiveness, int actuator_start_index,bool tiltable_matrix,int angle_test)
+		EffectivenessMatrix &effectiveness, int actuator_start_index,bool tiltable_matrix,float tilt_angle,int att_mode)
 {
 
 	int num_actuators = 0;
+	matrix::Dcmf _rotation;
+	_rotation = matrix::Dcmf{matrix::Eulerf{0.f, tilt_angle,0.f}};
+
 	//Used to check change in the following code
 
 	// PX4_INFO("Total number of rotors %d ",geometry.num_rotors);
-	if(tiltable_matrix){
-		// PX4_INFO("Tiltable matrix");
-		//use the start index from the tiltable system
-		//[0,geometry.num_rotors-tilted_rotors] -> fixed
-		//[tilted_index,tilted_rotors] => tilted
-		for (int i = 0; i < geometry.num_rotors-3; i++) {
+	if(tiltable_matrix) {
+	// PX4_INFO("Fixed matrix");
+	//Use only for tilted propellers
+		for (int i = 0; i < geometry.num_rotors; i++) {
 
-			if (i + actuator_start_index >= NUM_ACTUATORS) {
-				break;
-			}
-			// PX4_INFO("Actuator_start index %d", i);
+		if (i + actuator_start_index >= NUM_ACTUATORS) {
+		break;
+		}
+		// PX4_INFO("Actuator_start index %d", i);
 
-			++num_actuators;
+		++num_actuators;
+		//original axis
+		Vector3f axis = geometry.rotors[i].axis;
 
-			// Get rotor axis
-			//This value changes for the additional propellers,
-			Vector3f axis = geometry.rotors[i].axis;
-			//leave index for the tiltable axis in the case for the iris edf ->4
+		float axis_norm = axis.norm();
 
-			// *** CUSTOM ***
-			// if (i==4)
-			// {
-			// 	//axis * Rmatrix -> transformed vector
+		if (axis_norm > FLT_EPSILON) {
+			axis /= axis_norm;
 
-			// }
-			// *** END ***
-
-			// Normalize axis
-			float axis_norm = axis.norm();
-
-			if (axis_norm > FLT_EPSILON) {
-				axis /= axis_norm;
-
-			} else {
-				// Bad axis definition, ignore this rotor
-				continue;
-			}
-
-			// Rotor angle will change for the tiltable matrix
-			float rotor_angle = 0.785398;//atan2f(position(1),position(0));
-			// PX4_INFO("Rotor Angle %f ", (double)rotor_angle);
-			float cos_rotor = cosf(rotor_angle);
-			float sin_rotor = sinf(rotor_angle);
-
-			// Get rotor position
-			const Vector3f &position = geometry.rotors[i].position;
-
-			// Get coefficients
-			float ct = geometry.rotors[i].thrust_coef;
-			float km = geometry.rotors[i].moment_ratio;
-
-			if (geometry.propeller_torque_disabled) {
-				km = 0.f;
-			}
-
-			if (geometry.propeller_torque_disabled_non_upwards) {
-				bool upwards = fabsf(axis(0)) < 0.1f && fabsf(axis(1)) < 0.1f && axis(2) < -0.5f;
-
-				if (!upwards) {
-					km = 0.f;
-				}
-			}
-
-			if (fabsf(ct) < FLT_EPSILON) {
-				continue;
-			}
-
-			// PX4_INFO("Tiltable matrix %d",actuator_start_index);
-			// use different flag for this
-
-			// Mx tilted
-			effectiveness(0, i + actuator_start_index) = sin_rotor * km*ct;
-			// My tilted
-			effectiveness(1, i + actuator_start_index) =  - cos_rotor * km*ct;
-			// Mz tilted
-			effectiveness(2, i + actuator_start_index) = ct * sqrt(powf(position(0),2) + powf(position(1),2) ); //(position(0) * cos_rotor + position(1) * sin_rotor);
-
-			// Tilted thrust
-			effectiveness(3, i + actuator_start_index) = -ct * sin_rotor;
-			effectiveness(4, i + actuator_start_index) = ct * cos_rotor;
-			effectiveness(5, i + actuator_start_index) = 0.f;
+		} else {
+			// Bad axis definition, ignore this rotor
+			continue;
 		}
 
-	}
-	else {
-			// PX4_INFO("Fixed matrix");
-			//Use only for tilted propellers
+		// Get rotor position
+		const Vector3f position = geometry.rotors[i].position;
 
-			for (int i = 0; i < geometry.num_rotors; i++) {
+		// Get coefficients
 
-			if (i + actuator_start_index >= NUM_ACTUATORS) {
-			break;
-			}
-			// PX4_INFO("Actuator_start index %d", i);
+		float ct = geometry.rotors[i].thrust_coef;
+		float km = geometry.rotors[i].moment_ratio;
+		//index for the fixed values
+		if(i>=6)
 
-			++num_actuators;
-			Vector3f axis = geometry.rotors[i].axis;
-			//leave index for the tiltable axis in the case for the iris edf ->4
+		{	ct=geometry.rotors[i].thrust_coef*att_mode;
+			axis=_rotation*axis*att_mode;
+		}
 
-			// *** CUSTOM ***
-			// if (i==4)
-			// {
-			// 	//axis * Rmatrix -> transformed vector
-
-			// }
-			// *** END ***
-
-			// Normalize axis
-			float axis_norm = axis.norm();
-
-			if (axis_norm > FLT_EPSILON) {
-				axis /= axis_norm;
-
-			} else {
-				// Bad axis definition, ignore this rotor
-				continue;
-			}
-
-			// Get rotor position
-			const Vector3f &position = geometry.rotors[i].position;
-
-			// Get coefficients
-
-			float ct = geometry.rotors[i].thrust_coef;
-			float km = geometry.rotors[i].moment_ratio;
-			if(angle_test==0 && i>=6)
-			{
-				//change their value
-				// PX4_INFO("Control Changes");
-				ct = 0.0f;
-				km = 0.0f;
-
-			}
-
-			// Compute thrust generated by this rotor
-			matrix::Vector3f thrust = ct * axis;
-			// Compute moment generated by this rotor
-			matrix::Vector3f moment = ct * position.cross(axis) - ct * km * axis;
-			for (size_t j = 0; j < 3; j++) {
+		// Compute thrust generated by this rotor
+		matrix::Vector3f thrust = ct * axis;
+		// Compute moment generated by this rotor
+		matrix::Vector3f moment = ct * position.cross(axis) - ct * km * axis;
+		for (size_t j = 0; j < 3; j++) {
 			effectiveness(j, i + actuator_start_index) = moment(j);
 			effectiveness(j + 3, i + actuator_start_index) = thrust(j);
 			}
-
-			// if (geometry.yaw_by_differential_thrust_disabled) {
-			// 	// set yaw effectiveness to 0 if yaw is controlled by other means (e.g. tilts)
-			// 	effectiveness(2, i + actuator_start_index) = 0.f;
-			// }
-
-
-		// if (geometry.three_dimensional_thrust_disabled) {
-		// 	// Special case tiltrotor: instead of passing a 3D thrust vector (that would mostly have a x-component in FW, and z in MC),
-		// 	// pass the vector magnitude as z-component, plus the collective tilt. Passing 3D thrust plus tilt is not feasible as they
-		// 	// can't be allocated independently, and with the current controller it's not possible to have collective tilt calculated
-		// 	// by the allocator directly.
-
-		// 	effectiveness(0 + 3, i + actuator_start_index) = 0.f;
-		// 	effectiveness(1 + 3, i + actuator_start_index) = 0.f;
-		// 	effectiveness(2 + 3, i + actuator_start_index) = -ct;
-		// }
-
 		}
 	}
 
-	// for (int i = 0; i < geometry.num_rotors; i++) {
+	else {
+		for (int i = 0; i < math::min(NUM_ROTORS_MAX, geometry.num_rotors); i++) {
 
-	// 	if (i + actuator_start_index >= NUM_ACTUATORS) {
-	// 		break;
-	// 	}
-	// 	PX4_INFO("Actuator_start index %d", geometry.num_rotors);
+		if (i + actuator_start_index >= NUM_ACTUATORS) {
+			break;
+		}
 
-	// 	++num_actuators;
+		++num_actuators;
 
-	// 	// Get rotor axis
-	// 	//This value changes for the additional propellers,
-	// 	Vector3f axis = geometry.rotors[i].axis;
-	// 	//leave index for the tiltable axis in the case for the iris edf ->4
+		// Get rotor axis
+		Vector3f axis = geometry.rotors[i].axis;
 
-	// 	// *** CUSTOM ***
-	// 	// if (i==4)
-	// 	// {
-	// 	// 	//axis * Rmatrix -> transformed vector
+		// Normalize axis
+		float axis_norm = axis.norm();
 
-	// 	// }
-	// 	// *** END ***
+		if (axis_norm > FLT_EPSILON) {
+			axis /= axis_norm;
 
-	// 	// Normalize axis
-	// 	float axis_norm = axis.norm();
+		} else {
+			// Bad axis definition, ignore this rotor
+			continue;
+		}
 
-	// 	if (axis_norm > FLT_EPSILON) {
-	// 		axis /= axis_norm;
+		// Get rotor position
+		const Vector3f &position = geometry.rotors[i].position;
 
-	// 	} else {
-	// 		// Bad axis definition, ignore this rotor
-	// 		continue;
-	// 	}
+		// Get coefficients
+		float ct = geometry.rotors[i].thrust_coef;
+		float km = geometry.rotors[i].moment_ratio;
 
-	// 	// Get rotor position
-	// 	const Vector3f &position = geometry.rotors[i].position;
+		if (geometry.propeller_torque_disabled) {
+			km = 0.f;
+		}
 
-	// 	// Get coefficients
-	// 	float ct = geometry.rotors[i].thrust_coef;
-	// 	float km = geometry.rotors[i].moment_ratio;
+		if (geometry.propeller_torque_disabled_non_upwards) {
+			bool upwards = fabsf(axis(0)) < 0.1f && fabsf(axis(1)) < 0.1f && axis(2) < -0.5f;
 
-	// 	if (geometry.propeller_torque_disabled) {
-	// 		km = 0.f;
-	// 	}
+			if (!upwards) {
+				km = 0.f;
+			}
+		}
 
-	// 	if (geometry.propeller_torque_disabled_non_upwards) {
-	// 		bool upwards = fabsf(axis(0)) < 0.1f && fabsf(axis(1)) < 0.1f && axis(2) < -0.5f;
+		if (fabsf(ct) < FLT_EPSILON) {
+			continue;
+		}
 
-	// 		if (!upwards) {
-	// 			km = 0.f;
-	// 		}
-	// 	}
+		// Compute thrust generated by this rotor
+		matrix::Vector3f thrust = ct * axis;
 
-	// 	if (fabsf(ct) < FLT_EPSILON) {
-	// 		continue;
-	// 	}
+		// Compute moment generated by this rotor
+		matrix::Vector3f moment = ct * position.cross(axis) - ct * km * axis;
 
-	// 	// Create separate allocation matrices
-	// 	// Rotor angle will change for the tiltable matrix
-	// 	float rotor_angle = 0.785398;//atan2f(position(1),position(0));
-	// 	PX4_INFO("Rotor Angle %f ", (double)rotor_angle);
-	// 	float cos_rotor = cosf(rotor_angle);
-	// 	float sin_rotor = sinf(rotor_angle);
+		// Fill corresponding items in effectiveness matrix
+		for (size_t j = 0; j < 3; j++) {
+			effectiveness(j, i + actuator_start_index) = moment(j);
+			effectiveness(j + 3, i + actuator_start_index) = thrust(j);
+		}
+		}
 
-
-	// 	if (tiltable_matrix)
-	// 	{
-	// 		PX4_INFO("Tiltable matrix %d",actuator_start_index);
-	// 		// use different flag for this
-
-	// 		// Mx horizontal
-	// 		effectiveness(0, i + actuator_start_index) = sin_rotor * km*ct;
-	// 		// My horizontal
-	// 		effectiveness(1, i + actuator_start_index) =  - cos_rotor * km*ct;
-	// 		// Mz horizontal
-	// 		effectiveness(2, i + actuator_start_index) = ct * sqrt(powf(position(0),2) + powf(position(1),2) ); //(position(0) * cos_rotor + position(1) * sin_rotor);
-
-	// 		// Thrust horizontal
-	// 		effectiveness(3, i + actuator_start_index) = -ct * sin_rotor;
-	// 		effectiveness(4, i + actuator_start_index) = ct * cos_rotor;
-	// 		effectiveness(5, i + actuator_start_index) = 0.f;
-
-	// 		}
-	// 	else{
-
-	// 		PX4_INFO("Fixed matrix");
-	// 		//Use only for tilted propellers
-
-	// 		// Compute thrust generated by this rotor
-	// 		matrix::Vector3f thrust = ct * axis;
-	// 		// Compute moment generated by this rotor
-	// 		matrix::Vector3f moment = ct * position.cross(axis) - ct * km * axis;
-	// 		for (size_t j = 0; j < 3; j++) {
-	// 		effectiveness(j, i + actuator_start_index) = moment(j);
-	// 		effectiveness(j + 3, i + actuator_start_index) = thrust(j);
-	// 	}
-
-	// 	if (geometry.yaw_by_differential_thrust_disabled) {
-	// 		// set yaw effectiveness to 0 if yaw is controlled by other means (e.g. tilts)
-	// 		effectiveness(2, i + actuator_start_index) = 0.f;
-	// 	}
-
-	// 	if (geometry.three_dimensional_thrust_disabled) {
-	// 		// Special case tiltrotor: instead of passing a 3D thrust vector (that would mostly have a x-component in FW, and z in MC),
-	// 		// pass the vector magnitude as z-component, plus the collective tilt. Passing 3D thrust plus tilt is not feasible as they
-	// 		// can't be allocated independently, and with the current controller it's not possible to have collective tilt calculated
-	// 		// by the allocator directly.
-
-	// 		effectiveness(0 + 3, i + actuator_start_index) = 0.f;
-	// 		effectiveness(1 + 3, i + actuator_start_index) = 0.f;
-	// 		effectiveness(2 + 3, i + actuator_start_index) = -ct;
-	// 	}
-
-	// 	}
-
+	}
 
 
 	return num_actuators;

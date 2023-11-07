@@ -528,7 +528,7 @@ ControlAllocator::Run()
 				break;
 			case 1:
 				PX4_INFO("Forward Mode");
-				tilt_angle=1.57; //45 degrees
+				tilt_angle=thrust_vec_status.forward_angle; //45 degrees
 				update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::MANUAL_ANGLE_CHANGE);
 				_parameter_update_sub.copy(&param_update);
 				// We don't update the geometry after an actuator failure, as it could lead to unexpected results
@@ -541,6 +541,29 @@ ControlAllocator::Run()
 
 			case 2:
 				PX4_INFO("Backward Mode");
+				tilt_angle=thrust_vec_status.backward_angle; //-45 degrees
+				update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::MANUAL_ANGLE_CHANGE);
+				_parameter_update_sub.copy(&param_update);
+				// We don't update the geometry after an actuator failure, as it could lead to unexpected results
+				// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+				PX4_INFO("checking if it changes effectiveness");
+				updateParams();
+				parameters_updated();
+
+				//updateParams();
+				//parameters_updated();
+				break;
+			case 3:
+				PX4_INFO("Backward Mode");
+				tilt_angle=thrust_vec_status.backward_angle; //-45 degrees
+				update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::MANUAL_ANGLE_CHANGE);
+				_parameter_update_sub.copy(&param_update);
+				// We don't update the geometry after an actuator failure, as it could lead to unexpected results
+				// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+				PX4_INFO("checking if it changes effectiveness");
+				updateParams();
+				parameters_updated();
+
 				//updateParams();
 				//parameters_updated();
 				break;

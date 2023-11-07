@@ -106,7 +106,7 @@ public:
 	}
 
 	static int computeEffectivenessMatrix(const Geometry &geometry,
-					      EffectivenessMatrix &effectiveness, int actuator_start_index = 0,bool tiltable_matrix=false,int angle_test=0);
+					      EffectivenessMatrix &effectiveness, int actuator_start_index = 0,bool tiltable_matrix=false,float tilt_angle=0,int att_mode=1);
 
 	bool addActuators(Configuration &configuration,bool tiltable=0);
 

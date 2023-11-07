@@ -24,6 +24,7 @@ uint8 loiter_switch              # loiter 2 position switch (optional): _MISSION
 uint8 offboard_switch            # offboard 2 position switch (optional): _NORMAL_, OFFBOARD
 uint8 kill_switch                # throttle kill: _NORMAL_, KILL
 uint8 vectoring_switch         # thrust vectoring mode switch : Tilting mode, thrust vectoring mode [pc controlled]
+uint8 orientation_switch
 uint8 gear_switch                # landing gear switch: _DOWN_, UP
 uint8 transition_switch          # VTOL transition switch: _HOVER, FORWARD_FLIGHT
 

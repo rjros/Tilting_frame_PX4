@@ -203,7 +203,13 @@ private:
 		//Manual control of the orientation
 		(ParamInt<px4::params::MAN_ATT_DIR>) _param_vectoring_manual_dir,
 		//Control mode with RC
-		(ParamInt<px4::params::RC_VECT_MODE_SW>) _param_vectoring_mode_sw
+		(ParamInt<px4::params::RC_VECT_MODE_SW>) _param_vectoring_mode_sw,
+		//Control of angle with RC
+		(ParamInt<px4::params::RC_ANGLE_SW>) _param_rc_orientation_sw,
+		//Angle Information
+		(ParamFloat<px4::params::FW_ANGLE>) _param_forward_angle,
+		(ParamFloat<px4::params::BW_ANGLE>) _param_backward_angle
+
 	);
 
 	control::BlockDerivative _vel_x_deriv; /**< velocity derivative in x */

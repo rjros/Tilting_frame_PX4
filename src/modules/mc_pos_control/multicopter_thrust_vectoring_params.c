@@ -59,12 +59,42 @@ PARAM_DEFINE_INT32(VECT_ATT_MODE, 0);
  * Manual orientation
  *
  * @min 0
- * @max 3
+ * @max 2
  * @value 0 None
  * @value 1 Forward
- * @value 2 Backward
- * @value 2 CCW
+ * @value 3 Backward
  */
 PARAM_DEFINE_INT32(MAN_ATT_DIR, 0);
+
+
+/**
+ * Forward Positon Angle
+ *
+ * Margin that is kept for horizontal control when higher priority vertical thrust is saturated.
+ * To avoid completely starving horizontal control with high vertical error.
+ *
+ * @unit deg
+ * @min -90
+ * @max 90
+ * @decimal 1
+ * @increment 1
+ */
+PARAM_DEFINE_FLOAT(FW_ANGLE, 0);
+
+/**
+ * Backward_Positon Angle
+ *
+ * Margin that is kept for horizontal control when higher priority vertical thrust is saturated.
+ * To avoid completely starving horizontal control with high vertical error.
+ *
+ * @unit deg
+ * @min -90
+ * @max 90
+ * @decimal 1
+ * @increment 1
+ */
+PARAM_DEFINE_FLOAT(BW_ANGLE, 0);
+
+
 
 

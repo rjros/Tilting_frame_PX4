@@ -58,6 +58,7 @@ static bool operator ==(const manual_control_switches_s &a, const manual_control
 		a.photo_switch == b.photo_switch &&
 		a.video_switch == b.video_switch &&
 		a.vectoring_switch == b.vectoring_switch &&
+		a.orientation_switch==b.orientation_switch &&
 		a.engage_main_motor_switch == b.engage_main_motor_switch);
 }
 
@@ -248,6 +249,9 @@ void RCUpdate::update_rc_functions()
 
 	//omni mode parameters
 	_rc.function[rc_channels_s::FUNCTION_VECTORING_MODE] = _param_rc_vectoring_mode_sw.get() -1;
+	_rc.function[rc_channels_s::FUNCTION_ANGLE_SWITCH] = _param_rc_orientation_sw.get() -1;
+
+
 
 	_rc.function[rc_channels_s::FUNCTION_FLAPS] = _param_rc_map_flaps.get() - 1;
 
@@ -649,6 +653,8 @@ void RCUpdate::UpdateManualSwitches(const hrt_abstime &timestamp_sample)
 	switches.transition_switch = getRCSwitchOnOffPosition(rc_channels_s::FUNCTION_TRANSITION, _param_rc_trans_th.get());
 	switches.gear_switch = getRCSwitchOnOffPosition(rc_channels_s::FUNCTION_GEAR, _param_rc_gear_th.get());
 	switches.vectoring_switch = getRCSwitchOnOffPosition(rc_channels_s::FUNCTION_VECTORING_MODE, _param_rc_vectoring_th.get());
+	switches.orientation_switch = getRCSwitchOnOffPosition(rc_channels_s::FUNCTION_ANGLE_SWITCH, _param_rc_orientation_th.get());
+
 
 	switches.engage_main_motor_switch =
 		getRCSwitchOnOffPosition(rc_channels_s::FUNCTION_ENGAGE_MAIN_MOTOR, _param_rc_eng_mot_th.get());

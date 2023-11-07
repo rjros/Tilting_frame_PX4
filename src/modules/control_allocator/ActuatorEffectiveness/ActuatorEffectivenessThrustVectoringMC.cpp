@@ -78,7 +78,7 @@ ActuatorEffectivenessThrustVectoringMC::getEffectivenessMatrix(Configuration &co
 	//Fixed Motors Control
 	configuration.selected_matrix=0; //< chooses the matrix to be used
 	//_mc_rotors_fixed.enableYawByDifferentialThrust(false);
-	_rotors_fixed_added_succesfully = _mc_rotors_fixed.addActuators(configuration,false);
+	_rotors_fixed_added_succesfully = _mc_rotors_fixed.addActuators(configuration,true);
 	// PX4_INFO("Configuration Num actuators fixed  is %d ",*configuration.num_actuators);
 
 

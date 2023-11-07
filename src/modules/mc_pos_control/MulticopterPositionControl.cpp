@@ -589,15 +589,28 @@ void MulticopterPositionControl::Run()
 			///////////////////////////////////////////////////////////
 			//Add condition for selecting between rc or saved condition
 			//Get omni mode from rc
-			// param_t param = param_handle(px4::params::OMNI_ATT_MODE);
-			// manual_control_switches_sub.update(&switches);
-			// int32_t value= switches.omni_switch;
-			// param_set(param,&value);
+			param_t vectoring_param = param_handle(px4::params::VECT_ATT_MODE);
+			param_t angle_param =param_handle(px4::params::MAN_ATT_DIR);
+			manual_control_switches_sub.update(&switches);
+			int32_t att_mode= switches.vectoring_switch;
+			int32_t orientation =switches.orientation_switch;
+			param_set(vectoring_param,&att_mode);
+			param_set(angle_param,&orientation);
+
 			///////////////////////////////////////////////////////////
 			//Add condition for selecting between rc or saved condition
 			vectoring_status.att_mode = _param_vectoring_att_mode.get();
 			vectoring_status.manual_orientation = _param_vectoring_manual_dir.get();
-			//vectoring_status.att_mode=switches.vectoring_switch;
+
+
+			//Thrust vectoring status for tilting and not tilting mode
+			vectoring_status.att_mode=switches.vectoring_switch;
+			vectoring_status.manual_orientation=switches.orientation_switch;
+
+			//Angles for the tilting
+			vectoring_status.forward_angle=math::radians(_param_forward_angle.get());
+			vectoring_status.backward_angle=math::radians(_param_backward_angle.get());
+
 			_thrust_vectoring_status_pub.publish(vectoring_status);
 
 			//Thrust vectoring parameters, changed by rc or by the QGroundControl

@@ -248,6 +248,9 @@ protected:
 		(ParamInt<px4::params::RC_VECT_MODE_SW>) _param_rc_vectoring_mode_sw,
 		(ParamFloat<px4::params::RC_VECTORING_TH>) _param_rc_vectoring_th,
 
+		(ParamInt<px4::params::RC_ANGLE_SW>) _param_rc_orientation_sw,
+		(ParamFloat<px4::params::RC_ANGLE_TH>) _param_rc_orientation_th,
+
 		(ParamInt<px4::params::RC_CHAN_CNT>) _param_rc_chan_cnt
 	)
 };
