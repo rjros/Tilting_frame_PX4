@@ -619,7 +619,7 @@ ControlAllocator::Run()
 				c[1](5) = vehicle_thrust_setpoint.xyz[2];
 			}
 		}
-		// PX4_INFO("Control Allocation Number %d ", _num_control_allocation);
+		//PX4_INFO("Control Allocation Number %d ", _num_control_allocation);
 
 		/*** CUSTOM ***/
 		if( source != EffectivenessSource::THRUST_VECTORING_MC ||
