@@ -108,60 +108,10 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 
 }
 
-void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
+void thrustTofixedPitchAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
 			      vehicle_attitude_setpoint_s &att_sp)
 {
-
-
-	// //Ignores the commannd and relies on the acceleration or addition based
-	// // set Z axis to upward direction
-	// Vector3f body_z = Vector3f(0.f, 0.f, 1.f);
-
-	// // desired body_x and body_y axis
-	// Vector3f body_x = Vector3f(cos(yaw_sp), sin(yaw_sp), 0.0f);
-	// Vector3f body_y = Vector3f(-sinf(yaw_sp), cosf(yaw_sp), 0.0f);
-
-	// Dcmf R_sp;
-
-
-	// // fill rotation matrix
-	// for (int i = 0; i < 3; i++) {
-	// 	R_sp(i, 0) = body_x(i);
-	// 	R_sp(i, 1) = body_y(i);
-	// 	R_sp(i, 2) = body_z(i);
-	// }
-
-	// // copy quaternion setpoint to attitude setpoint topic
-	// Quatf q_sp = R_sp;
-	// q_sp.copyTo(att_sp.q_d);
-	// att_sp.q_d_valid = true;
-
-	// // set the euler angles, for logging only, must not be used for control
-	// att_sp.roll_body = 0;
-	// att_sp.pitch_body = 0;
-	// att_sp.yaw_body = yaw_sp;
-
-	// //If used it breaks
-	// // if (omni_proj_axes==1){// if thrust is projected on the current attitude
-	// // 	matrix::Dcmf R_body=att;
-
-	// // 	for (int i=0; i<3; i++) {
-	// // 		body_x(i)=R_body(i,0);
-	// // 		body_y(i)=R_body(i,1);
-	// // 		body_z(i)=R_body(i,2);
-	// // 	}
-	// // }
-	// // PX4_INFO("Thrust Components %f %f %f",(double)thr_sp(0),(double)thr_sp(1),(double)thr_sp(2));
-
-	// att_sp.thrust_body[0] = thr_sp.dot(body_x);// values tend to be very small
-	// att_sp.thrust_body[1] = thr_sp.dot(body_y);
-	// att_sp.thrust_body[2] = thr_sp.dot(body_z);
-
-	// PX4_INFO("New Thrust Components %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
-
-
-	//PX4_INFO("attitude x, y ,z %f %f %f",(double)att_sp.roll_body,(double)att_sp.pitch_body,(double)att_sp.yaw_body);
-
+	//refers to the forward tilt, and used in the MC and Thrust Vectoring model
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//TEST Fixed Pitch Angle//
 	// zero vector, no direction, set safe level value
@@ -278,6 +228,49 @@ void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const 
 	//PX4_INFO("New Thrust Components %f %f %f",(double) thrust_body_rotated(0),(double)thrust_body_rotated(1),(double)thrust_body_rotated(2));
 
 }
+
+void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
+			      vehicle_attitude_setpoint_s &att_sp)
+	{
+
+	//Ignores the commannd and relies on the acceleration or addition based
+	// set Z axis to upward direction
+	Vector3f body_z = Vector3f(0.f, 0.f, 1.f);
+
+	// desired body_x and body_y axis
+	Vector3f body_x = Vector3f(cos(yaw_sp), sin(yaw_sp), 0.0f);
+	Vector3f body_y = Vector3f(-sinf(yaw_sp), cosf(yaw_sp), 0.0f);
+
+	Dcmf R_sp;
+
+
+	// fill rotation matrix
+	for (int i = 0; i < 3; i++) {
+		R_sp(i, 0) = body_x(i);
+		R_sp(i, 1) = body_y(i);
+		R_sp(i, 2) = body_z(i);
+	}
+
+	// copy quaternion setpoint to attitude setpoint topic
+	Quatf q_sp = R_sp;
+	q_sp.copyTo(att_sp.q_d);
+	att_sp.q_d_valid = true;
+
+	// set the euler angles, for logging only, must not be used for control
+	att_sp.roll_body = 0;
+	att_sp.pitch_body = 0;
+	att_sp.yaw_body = yaw_sp;
+
+
+	att_sp.thrust_body[0] = thr_sp.dot(body_x);// values tend to be very small
+	att_sp.thrust_body[1] = thr_sp.dot(body_y);
+	att_sp.thrust_body[2] = thr_sp.dot(body_z);
+
+	//PX4_INFO("New Thrust Components %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
+
+
+	//PX4_INFO("attitude x, y ,z %f %f %f",(double)att_sp.roll_body,(double)att_sp.pitch_body,(double)att_sp.yaw_body);
+	}
 
 //void planar motion (direction)
 
