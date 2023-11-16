@@ -86,6 +86,8 @@ void MulticopterPositionControl::parameters_update(bool force)
 		ModuleParams::updateParams();
 		SuperBlock::updateParams();
 
+		PX4_INFO("Parameters CHanged");
+
 		int num_changed = 0;
 
 		if (_param_sys_vehicle_resp.get() >= 0.f) {
@@ -168,6 +170,15 @@ void MulticopterPositionControl::parameters_update(bool force)
 			Vector3f(_param_mpc_xy_vel_i_acc.get(), _param_mpc_xy_vel_i_acc.get(), _param_mpc_z_vel_i_acc.get()),
 			Vector3f(_param_mpc_xy_vel_d_acc.get(), _param_mpc_xy_vel_d_acc.get(), _param_mpc_z_vel_d_acc.get()));
 		_control.setHorizontalThrustMargin(_param_mpc_thr_xy_marg.get());
+
+		//Control Gains fot the planar control
+		_control.setPlanarPositionGains(Vector3f(_param_mpc_pxy_p.get(), _param_mpc_pxy_p.get(), _param_mpc_z_p.get()));
+		_control.setPlanarVelocityGains(
+			Vector3f(_param_mpc_pxy_vel_p_acc.get(), _param_mpc_pxy_vel_p_acc.get(), _param_mpc_z_vel_p_acc.get()),
+			Vector3f(_param_mpc_pxy_vel_i_acc.get(), _param_mpc_pxy_vel_i_acc.get(), _param_mpc_z_vel_i_acc.get()),
+			Vector3f(_param_mpc_pxy_vel_d_acc.get(), _param_mpc_pxy_vel_d_acc.get(), _param_mpc_z_vel_d_acc.get()));
+		//Control Gains fot the planar control
+
 
 		// Check that the design parameters are inside the absolute maximum constraints
 		if (_param_mpc_xy_cruise.get() > _param_mpc_xy_vel_max.get()) {
@@ -527,6 +538,10 @@ void MulticopterPositionControl::Run()
 			const float minimum_thrust = flying ? _param_mpc_thr_min.get() : 0.f;
 			_control.setThrustLimits(minimum_thrust, _param_mpc_thr_max.get());
 
+			//Horizontal thrust for planar mode
+			float minimum_planar_thrust = flying ? _param_mpc_planar_thr_min.get() : 0.f;
+			_control.setPlanarThrustLimits(minimum_planar_thrust, _param_mpc_planar_thr_max.get());
+
 			float max_speed_xy = _param_mpc_xy_vel_max.get();
 
 			if (PX4_ISFINITE(vehicle_local_position.vxy_max)) {
@@ -563,6 +578,7 @@ void MulticopterPositionControl::Run()
 				_control.setInputSetpoint(generateFailsafeSetpoint(vehicle_local_position.timestamp_sample, states, true));
 				_control.setVelocityLimits(_param_mpc_xy_vel_max.get(), _param_mpc_z_vel_max_up.get(), _param_mpc_z_vel_max_dn.get());
 				_control.update(dt,_param_vectoring_att_mode.get());
+
 			}
 
 			// Publish internal position control setpoints
@@ -577,6 +593,8 @@ void MulticopterPositionControl::Run()
 			vehicle_attitude_setpoint_s attitude_setpoint{};
 			//_control.getAttitudeSetpoint(attitude_setpoint);
 			attitude_setpoint.timestamp = hrt_absolute_time();
+
+
 
 			///////////////////////////////////////////////////////////
 			// Thrust vectoring parameters, changed by rc or by the QGroundControl

@@ -138,3 +138,32 @@ PARAM_DEFINE_FLOAT(MPC_THR_MIN, 0.12f);
  * @group Multicopter Position Control
  */
 PARAM_DEFINE_FLOAT(MPC_THR_MAX, 1.f);
+
+/**
+ * Minimum collective thrust for the planar modes in XY
+ *
+ *Tune according to type of actuator
+ *
+ * @unit norm
+ * @min 0
+ * @max 1
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_PTH_MIN, 0.12f);
+
+/**
+ * Maximum collective thrust for the planar modes in XY
+ *
+ *Tune according to type of actuator
+ *
+ * @unit norm
+ * @min 0
+ * @max 1
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_PTH_MAX, 1.0f);
+

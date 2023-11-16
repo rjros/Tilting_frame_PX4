@@ -128,10 +128,71 @@ PARAM_DEFINE_FLOAT(MPC_Z_VEL_D_ACC, 0.f);
  *
  * Defined as corrective acceleration in m/s^2 per m/s^2 velocity derivative
  *
- * @min 0.1
+ * @min 0.0
  * @max 2
  * @decimal 2
  * @increment 0.02
  * @group Multicopter Position Control
  */
 PARAM_DEFINE_FLOAT(MPC_XY_VEL_D_ACC, 0.2f);
+
+
+//For planar controller
+
+
+/**
+ * Proportional gain for horizontal position error
+ *
+ * Defined as corrective velocity in m/s per m position error
+ *
+ * @min 0
+ * @max 5
+ * @decimal 2
+ * @increment 0.1
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_PXY_P, 0.95f);
+
+
+/**
+ * Proportional gain for horizontal velocity error
+ *
+ * Defined as corrective acceleration in m/s^2 per m/s velocity error
+ *
+ * @min 0.0
+ * @max 5
+ * @decimal 2
+ * @increment 0.1
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_PXY_VEL_P_A, 1.8f);
+
+
+
+/**
+ * Integral gain for horizontal velocity error
+ *
+ * Defined as correction acceleration in m/s^2 per m velocity integral
+ * Allows to eliminate steady state errors in disturbances like wind.
+ *
+ * @min 0
+ * @max 60
+ * @decimal 2
+ * @increment 0.02
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_PXY_VEL_I_A, 0.4f);
+
+
+/**
+ * Differential gain for horizontal velocity error
+ *
+ * Defined as corrective acceleration in m/s^2 per m/s^2 velocity derivative
+ *
+ * @min 0.0
+ * @max 2
+ * @decimal 2
+ * @increment 0.02
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_PXY_VEL_D_A, 0.2f);

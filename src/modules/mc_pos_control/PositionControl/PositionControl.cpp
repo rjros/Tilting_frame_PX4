@@ -50,11 +50,19 @@ const trajectory_setpoint_s PositionControl::empty_trajectory_setpoint = {0, {NA
 
 void PositionControl::setVelocityGains(const Vector3f &P, const Vector3f &I, const Vector3f &D)
 {
-	//Gains are different based on the mode?
 	_gain_vel_p = P;
 	_gain_vel_i = I;
 	_gain_vel_d = D;
 }
+//Planar Gains//
+void PositionControl::setPlanarVelocityGains(const Vector3f &P, const Vector3f &I, const Vector3f &D)
+{
+	//Use values from the users parameters,this depends on number of fans
+	_gain_planar_vel_p = P;
+	_gain_planar_vel_i = I;
+	_gain_planar_vel_d = D;
+}
+//Planar Gains End//
 
 void PositionControl::setVelocityLimits(const float vel_horizontal, const float vel_up, const float vel_down)
 {
@@ -68,6 +76,13 @@ void PositionControl::setThrustLimits(const float min, const float max)
 	// make sure there's always enough thrust vector length to infer the attitude
 	_lim_thr_min = math::max(min, 10e-4f);
 	_lim_thr_max = max;
+}
+
+void PositionControl::setPlanarThrustLimits(const float min, const float max)
+{
+	// make sure there's always enough thrust vector length to infer the attitude
+	_lim_planar_thr_min = math::max(min, 10e-4f);
+	_lim_planar_thr_max = max;
 }
 
 void PositionControl::setHorizontalThrustMargin(const float margin)
@@ -161,7 +176,7 @@ void PositionControl::_positionControl()
 void PositionControl::_planar_positionControl()
 {
 	// P-position controller
-	Vector3f vel_sp_position = (_pos_sp - _pos).emult(_gain_pos_p);
+	Vector3f vel_sp_position = (_pos_sp - _pos).emult(_gain_planar_pos_p);
 	// Position and feed-forward velocity setpoints or position states being NAN results in them not having an influence
 	ControlMath::addIfNotNanVector3f(_vel_sp, vel_sp_position);
 	// make sure there are no NAN elements for further reference while constraining
@@ -181,7 +196,7 @@ void PositionControl::_planar_velocityControl(const float dt)
 	Vector3f vel_error = _vel_sp - _vel;
 	//gains are the same as the ones used in the tilting mode, this should be adjusted by the user
 	//The parametes should be gain_vel_p and gain_vel_d
-	Vector3f acc_sp_velocity = vel_error.emult(_gain_vel_p) + _vel_int - _vel_dot.emult(_gain_vel_d);
+	Vector3f acc_sp_velocity = vel_error.emult(_gain_planar_vel_p) + _vel_int - _vel_dot.emult(_gain_planar_vel_d);
 
 	ControlMath::addIfNotNanVector3f(_acc_sp, acc_sp_velocity);
 
@@ -194,22 +209,13 @@ void PositionControl::_planar_velocityControl(const float dt)
 	vel_error(2) = 0.f;
 	}
 
-	// Estimate the optimal tilt angle and direction to conteract the wind
-	// Prioritize vertical control while keeping a horizontal margin
-	//Mode dependant with additional actuators is not needed
-
-
-
-	//Thrust XY
-	// Vector2f thrust_sp_xy(_thr_sp);
-	// float thrust_sp_xy_norm = thrust_sp_xy.norm();
 	const float thrust_max_squared = math::sq(_lim_thr_max);
 	// float thrust_max_xy = _lim_thr_max;
 
 	// if (thrust_sp_xy_norm > thrust_max_xy) {
 	// _thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
 	// }
-	PX4_INFO("Limit thrust max min vel x %f %f %f ", (double)_lim_thr_max,(double)_lim_thr_min,(double)_lim_vel_horizontal);
+	// PX4_INFO("Limit thrust max min vel x %f %f %f ", (double)_lim_thr_max,(double)_lim_thr_min,(double)_lim_vel_horizontal);
 
 
 	//Vertical thrust
@@ -220,34 +226,80 @@ void PositionControl::_planar_velocityControl(const float dt)
 
 	//////Compare the merit of using an anti windup
 	// // Use tracking Anti-Windup for horizontal direction: during saturation, the integrator is used to unsaturate the output
-	// // see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
+	// see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
 	// Integrator anti-windup in vertical direction
-	// if ((_thr_sp(0) >= _lim_thr_min && vel_error(0) >= 0.0f) ||
-	// (_thr_sp(0) <= _lim_thr_max && vel_error(0) <= 0.0f)) {
-	// vel_error(0) = 0.f;
+
+
+
+	if ((abs(_thr_sp(0)) >= _lim_planar_thr_max && vel_error(0) >= 0.0f) ||
+	(abs(_thr_sp(0)) <= _lim_planar_thr_min && vel_error(0) <= 0.0f)) {
+	vel_error(0) = 0.f;
+	}
+
+
+	if ((abs(_thr_sp(1)) >= _lim_planar_thr_max && vel_error(1) >= 0.0f) ||
+	(abs(_thr_sp(1)) <= _lim_planar_thr_min && vel_error(1) <= 0.0f)) {
+	vel_error(1) = 0.f;
+	}
+
+	// if (_thr_sp(0)>=0.0f)
+	// {
+	// 	if ((_thr_sp(0) >= _lim_planar_thr_max && vel_error(0) >= 0.0f) ||
+	// 	(_thr_sp(0) <= _lim_planar_thr_min && vel_error(0) <= 0.0f)) {
+	// 	vel_error(0) = 0.f;
+	// 	}
 	// }
 
-	// if ((_thr_sp(1) >= _lim_thr_min && vel_error(1) >= 0.0f) ||
-	// (_thr_sp(1) <= _lim_thr_max && vel_error(1) <= 0.0f)) {
-	// vel_error(1) = 0.f;
+	// else
+	// {
+	// 	if ((_thr_sp(0) <= -_lim_planar_thr_max && vel_error(0) <= 0.0f) ||
+	// 	(_thr_sp(0) >= -_lim_planar_thr_min && vel_error(0) >= 0.0f)) {
+	// 	vel_error(0) = 0.f;
+	// 	}
 	// }
+
+	// if (_thr_sp(1)>=0.0f)
+	// {
+	// 	if ((_thr_sp(1) >= _lim_planar_thr_max && vel_error(1) <= 0.0f) ||
+	// 	(_thr_sp(1) <= _lim_planar_thr_min && vel_error(1) <= 0.0f)) {
+	// 	vel_error(1) = 0.f;
+	// 	}
+	// }
+
+	// else
+	// {
+	// 	if ((_thr_sp(1) <= -_lim_planar_thr_max && vel_error(1) <= 0.0f) ||
+	// 	(_thr_sp(1) >= -_lim_planar_thr_min && vel_error(1) >= 0.0f)) {
+	// 	vel_error(1) = 0.f;
+	// 	}
+	// }
+
+
+
+	// PX4_INFO("Velocity Error %f %f %f",(double)_vel(0),(double)_vel(1),(double)_vel(2));
 	//////Compare the merit of using an anti windup
+	//saturate The Vectors
+	_thr_sp(0)=_thr_sp(0)>0.0f? math::min(_thr_sp(0),_lim_planar_thr_max): math::max(_thr_sp(0),-_lim_planar_thr_max);
+	_thr_sp(1)=_thr_sp(1)>0.0f? math::min(_thr_sp(1),_lim_planar_thr_max): math::max(_thr_sp(1),-_lim_planar_thr_max);
+
+	PX4_INFO("Th %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
 
 
 
 	// const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_hover_thrust));
-	float factor= 10.0;
-	const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_xy_factor*factor));
+	// float factor= 2.0;
+	// const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_xy_factor*factor));
 	// PX4_INFO("New Thrust Components %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
 
-	const float arw_gain = 2.f / _gain_vel_p(0);
-	vel_error.xy() = Vector2f(vel_error) - (arw_gain * (Vector2f(_acc_sp) - acc_sp_xy_limited));
+	// const float arw_gain = 2.f / _gain_planar_vel_p(0);
+	// vel_error.xy() = Vector2f(vel_error) - (arw_gain * (Vector2f(_acc_sp) - acc_sp_xy_limited));
 
 	// Make sure integral doesn't get NAN
 	ControlMath::setZeroIfNanVector3f(vel_error);
 	// Update integral part of velocity control
 	//separate based on each individual velocity component
-	_vel_int += vel_error.emult(_gain_vel_i) * dt;
+	_vel_int += vel_error.emult(_gain_planar_vel_i) * dt;
+
 
 	// limit thrust integral
 	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));

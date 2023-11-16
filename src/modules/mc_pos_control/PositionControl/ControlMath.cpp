@@ -203,7 +203,7 @@ void thrustTofixedPitchAttitude(const Vector3f &thr_sp, const float yaw_sp, cons
 	att_sp.thrust_body[1] = thrust_sp_xy.dot(body_y);
 	att_sp.thrust_body[2] = thrust_sp_xy.dot(body_z);
 
-	// PX4_INFO("New Thrust Components %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
+	PX4_INFO("New Thrust Components %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
 
 
 }
@@ -250,7 +250,7 @@ void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const 
 	// PX4_INFO("New Thrust Components %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
 
 
-	//PX4_INFO("attitude x, y ,z %f %f %f",(double)att_sp.roll_body,(double)att_sp.pitch_body,(double)att_sp.yaw_body);
+	// PX4_INFO("attitude x, y ,z %f %f %f",(double)att_sp.roll_body,(double)att_sp.pitch_body,(double)att_sp.yaw_body);
 	}
 
 //void planar motion (direction)

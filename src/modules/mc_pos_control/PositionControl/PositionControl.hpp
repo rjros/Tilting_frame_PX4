@@ -88,6 +88,13 @@ public:
 	 */
 	void setPositionGains(const matrix::Vector3f &P) { _gain_pos_p = P; }
 
+
+	/**
+	 * Set the planar position control gains
+	 * @param P 3D vector of proportional gains for x,y,z axis
+	 */
+	void setPlanarPositionGains(const matrix::Vector3f &P) { _gain_planar_pos_p = P; }
+
 	/**
 	 * Set the velocity control gains
 	 * @param P 3D vector of proportional gains for x,y,z axis
@@ -95,6 +102,13 @@ public:
 	 * @param D 3D vector of derivative gains
 	 */
 	void setVelocityGains(const matrix::Vector3f &P, const matrix::Vector3f &I, const matrix::Vector3f &D);
+	/**
+	 * Set the velocity control gains
+	 * @param P 3D vector of proportional gains for x,y,z axis
+	 * @param I 3D vector of integral gains
+	 * @param D 3D vector of derivative gains
+	 */
+	void setPlanarVelocityGains(const matrix::Vector3f &P, const matrix::Vector3f &I, const matrix::Vector3f &D);
 
 	/**
 	 * Set the maximum velocity to execute with feed forward and position control
@@ -110,6 +124,16 @@ public:
 	 * @param max maximum thrust e.g. 0.9 or 1
 	 */
 	void setThrustLimits(const float min, const float max);
+
+	//Planar Parameters
+	/**
+	 * Set the minimum and maximum collective normalized thrust [0,1] that can be output by the controller
+	 * @param min minimum thrust e.g. 0.1 or 0
+	 * @param max maximum thrust e.g. 0.9 or 1
+	 */
+	void setPlanarThrustLimits(const float min, const float max);
+	//Planar Parameters
+
 
 	/**
 	 * Set margin that is kept for horizontal control when prioritizing vertical thrust
@@ -225,6 +249,11 @@ private:
 	matrix::Vector3f _gain_vel_p; ///< Velocity control proportional gain
 	matrix::Vector3f _gain_vel_i; ///< Velocity control integral gain
 	matrix::Vector3f _gain_vel_d; ///< Velocity control derivative gain
+	//Gains for the planar controller//
+	matrix::Vector3f _gain_planar_pos_p;///< Position control proportional gain
+	matrix::Vector3f _gain_planar_vel_p; ///< Velocity control proportional gain
+	matrix::Vector3f _gain_planar_vel_i; ///< Velocity control integral gain
+	matrix::Vector3f _gain_planar_vel_d; ///< Velocity control derivative gain
 
 	// Limits
 	float _lim_vel_horizontal{}; ///< Horizontal velocity limit with feed forward and position control
@@ -234,8 +263,14 @@ private:
 	float _lim_thr_max{}; ///< Maximum collective thrust allowed as output [-1,0] e.g. -0.1
 	float _lim_thr_xy_margin{}; ///< Margin to keep for horizontal control when saturating prioritized vertical thrust
 	float _lim_tilt{}; ///< Maximum tilt from level the output attitude is allowed to have
+	//Planar thrust limits
+	float _lim_planar_thr_min{}; ///< Minimum collective thrust allowed as output [-1,0] e.g. -0.9
+	float _lim_planar_thr_max{}; ///< Maximum collective thrust allowed as output [-1,0] e.g. -0.1
+	//Planar thrust limits
 
-	float _xy_factor{0.7};// Analogous to the hover thrust multiplier
+
+
+	float _xy_factor{0.5};// Analogous to the hover thrust multiplier
 
 	float _hover_thrust{}; ///< Thrust [HOVER_THRUST_MIN, HOVER_THRUST_MAX] with which the vehicle hovers not accelerating down or up with level orientation
 
