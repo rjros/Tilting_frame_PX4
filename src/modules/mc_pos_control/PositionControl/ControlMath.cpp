@@ -197,35 +197,14 @@ void thrustTofixedPitchAttitude(const Vector3f &thr_sp, const float yaw_sp, cons
 	att_sp.roll_body = euler.phi();
 	att_sp.pitch_body = euler.theta();
 	att_sp.yaw_body = euler.psi();
-	//Thrust value for each axis
 
-	// if (att_sp.pitch_body<0.0001f)
-	// {
-	// 	att_sp.thrust_body[0] = thr_sp.dot(body_x);//(thr_sp.dot(body_x)>0.0f)?thr_sp.dot(body_x):0;
-	// 	att_sp.thrust_body[1] = thr_sp.dot(body_y);//(thr_sp.dot(body_y)>0.0f)?thr_sp.dot(body_y):0;
-	// 	att_sp.thrust_body[2] = thr_sp.dot(body_z);
 
-	// }
-	// else {
-	// 	att_sp.thrust_body[0] = 0;//(thr_sp.dot(body_x)>0.0f)?thr_sp.dot(body_x):0;
-	// 	att_sp.thrust_body[1] = 0;//(thr_sp.dot(body_y)>0.0f)?thr_sp.dot(body_y):0;
-	// 	att_sp.thrust_body[2] = thr_sp.dot(body_z);
-	// }
-
-	// att_sp.thrust_body[0] = thr_sp.dot(body_x);
-	// att_sp.thrust_body[1] = thr_sp.dot(body_y);
-	// att_sp.thrust_body[2] = thr_sp.dot(body_z);
 	att_sp.thrust_body[0] = thrust_sp_xy.dot(body_x);
 	att_sp.thrust_body[1] = thrust_sp_xy.dot(body_y);
 	att_sp.thrust_body[2] = thrust_sp_xy.dot(body_z);
 
+	// PX4_INFO("New Thrust Components %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
 
-	//Check thrust vector in the body frame
-	// Vector3f thrust_body= {att_sp.thrust_body[0],att_sp.thrust_body[1],att_sp.thrust_body[2]};
-	// Vector3f thrust_body_rotated=  _rotation * thrust_body;
-	//PX4_INFO("Constant x, y ,z %f %f %f",(double)att_sp.roll_body,(double)att_sp.pitch_body,(double)att_sp.yaw_body);
-	// PX4_INFO("New Body x %f %f %f",(double)body_x(0),(double)body_x(1),(double)body_x(2));
-	//PX4_INFO("New Thrust Components %f %f %f",(double) thrust_body_rotated(0),(double)thrust_body_rotated(1),(double)thrust_body_rotated(2));
 
 }
 
@@ -256,6 +235,8 @@ void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const 
 	q_sp.copyTo(att_sp.q_d);
 	att_sp.q_d_valid = true;
 
+
+
 	// set the euler angles, for logging only, must not be used for control
 	att_sp.roll_body = 0;
 	att_sp.pitch_body = 0;
@@ -266,7 +247,7 @@ void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const 
 	att_sp.thrust_body[1] = thr_sp.dot(body_y);
 	att_sp.thrust_body[2] = thr_sp.dot(body_z);
 
-	//PX4_INFO("New Thrust Components %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
+	// PX4_INFO("New Thrust Components %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
 
 
 	//PX4_INFO("attitude x, y ,z %f %f %f",(double)att_sp.roll_body,(double)att_sp.pitch_body,(double)att_sp.yaw_body);

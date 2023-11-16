@@ -50,6 +50,7 @@ const trajectory_setpoint_s PositionControl::empty_trajectory_setpoint = {0, {NA
 
 void PositionControl::setVelocityGains(const Vector3f &P, const Vector3f &I, const Vector3f &D)
 {
+	//Gains are different based on the mode?
 	_gain_vel_p = P;
 	_gain_vel_i = I;
 	_gain_vel_d = D;
@@ -113,14 +114,25 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode)
 
 	if (valid) {
 
-
-		_positionControl();
-			_velocityControl(dt,vectoring_att_mode);
-		_yawspeed_sp = PX4_ISFINITE(_yawspeed_sp) ? _yawspeed_sp : 0.f;
-		_yaw_sp = PX4_ISFINITE(_yaw_sp) ? _yaw_sp : _yaw; // TODO: better way to disable yaw control
+	if (vectoring_att_mode > 6 || vectoring_att_mode< 0) {
+		PX4_ERR("Vectoring Mode parameter set to unknown value!");
 	}
 
-
+	//check value for the switch
+	switch (vectoring_att_mode) {
+	case 3:	{
+		_positionControl();
+		_velocityControl(dt);
+		_yawspeed_sp = PX4_ISFINITE(_yawspeed_sp) ? _yawspeed_sp : 0.f;
+		_yaw_sp = PX4_ISFINITE(_yaw_sp) ? _yaw_sp : _yaw; // TODO: better way to disable yaw control
+		}break;//here
+	default:
+		_planar_positionControl();
+		_planar_velocityControl(dt);
+		_yawspeed_sp = PX4_ISFINITE(_yawspeed_sp) ? _yawspeed_sp : 0.f;//yaw control can be separated based on 2 matrices
+		_yaw_sp = PX4_ISFINITE(_yaw_sp) ? _yaw_sp : _yaw; // TODO: better way to disable yaw control
+		}
+	}
 
 
 	// There has to be a valid output acceleration and thrust setpoint otherwise something went wrong
@@ -145,79 +157,134 @@ void PositionControl::_positionControl()
 
 
 }
+///Planar position control functions //////////////////////////////////////////////////////////////////////////////////////
+void PositionControl::_planar_positionControl()
+{
+	// P-position controller
+	Vector3f vel_sp_position = (_pos_sp - _pos).emult(_gain_pos_p);
+	// Position and feed-forward velocity setpoints or position states being NAN results in them not having an influence
+	ControlMath::addIfNotNanVector3f(_vel_sp, vel_sp_position);
+	// make sure there are no NAN elements for further reference while constraining
+	ControlMath::setZeroIfNanVector3f(vel_sp_position);
 
-// void PositionControl::_velocityControl(const float dt,const int vectoring_att_mode)
-// {
-// 	// Constrain vertical velocity integral
-// 	_vel_int(2) = math::constrain(_vel_int(2), -CONSTANTS_ONE_G, CONSTANTS_ONE_G);
-// 	// PX4_INFO("velocity setpoint %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
+	// Constrain horizontal velocity by prioritizing the velocity component along the
+	// the desired position setpoint over the feed-forward term.
+	//Should remain as close as possible as the tilting mode, so the velocity limits will reamain
+	_vel_sp.xy() = ControlMath::constrainXY(vel_sp_position.xy(), (_vel_sp - vel_sp_position).xy(), _lim_vel_horizontal);
+	// Constrain velocity in z-direction.
+	_vel_sp(2) = math::constrain(_vel_sp(2), -_lim_vel_up, _lim_vel_down);
+}
 
+void PositionControl::_planar_velocityControl(const float dt)
+{
+	// PID velocity control
+	Vector3f vel_error = _vel_sp - _vel;
+	//gains are the same as the ones used in the tilting mode, this should be adjusted by the user
+	//The parametes should be gain_vel_p and gain_vel_d
+	Vector3f acc_sp_velocity = vel_error.emult(_gain_vel_p) + _vel_int - _vel_dot.emult(_gain_vel_d);
 
-// 	// PID velocity control
-// 	Vector3f vel_error = _vel_sp - _vel;
-// 	Vector3f acc_sp_velocity = vel_error.emult(_gain_vel_p) + _vel_int - _vel_dot.emult(_gain_vel_d);
-
-// 	// No control input from setpoints or corresponding states which are NAN
-// 	ControlMath::addIfNotNanVector3f(_acc_sp, acc_sp_velocity);
-
-// 	_accelerationControl();
-
-// 	// Integrator anti-windup in vertical direction
-// 	if ((_thr_sp(2) >= -_lim_thr_min && vel_error(2) >= 0.f) ||
-// 	    (_thr_sp(2) <= -_lim_thr_max && vel_error(2) <= 0.f)) {
-// 		vel_error(2) = 0.f;
-// 	}
-
-// 	// Prioritize vertical control while keeping a horizontal margin
-// 	const Vector2f thrust_sp_xy(_thr_sp);
-// 	const float thrust_sp_xy_norm = thrust_sp_xy.norm();
-// 	const float thrust_max_squared = math::sq(_lim_thr_max);
-
-// 	// Determine how much vertical thrust is left keeping horizontal margin
-// 	const float allocated_horizontal_thrust = math::min(thrust_sp_xy_norm, _lim_thr_xy_margin);
-// 	const float thrust_z_max_squared = thrust_max_squared - math::sq(allocated_horizontal_thrust);
-
-// 	// Saturate maximal vertical thrust
-// 	_thr_sp(2) = math::max(_thr_sp(2), -sqrtf(thrust_z_max_squared));
-
-// 	// Determine how much horizontal thrust is left after prioritizing vertical control
-// 	const float thrust_max_xy_squared = thrust_max_squared - math::sq(_thr_sp(2));
-// 	float thrust_max_xy = 0.f;
+	ControlMath::addIfNotNanVector3f(_acc_sp, acc_sp_velocity);
 
 
-// 	// PX4_INFO("Thrust Value before saturation %f %f %f ", (double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
-// 	if (thrust_max_xy_squared > 0.f) {
-// 		thrust_max_xy = sqrtf(thrust_max_xy_squared);
-// 	}
+	_planar_accelerationControl();
+	//Vertical acceleration
+	// Integrator anti-windup in vertical direction
+	if ((_thr_sp(2) >= -_lim_thr_min && vel_error(2) >= 0.0f) ||
+	(_thr_sp(2) <= -_lim_thr_max && vel_error(2) <= 0.0f)) {
+	vel_error(2) = 0.f;
+	}
 
-// 	// Saturate thrust in horizontal direction
-// 	if (thrust_sp_xy_norm > thrust_max_xy) {
-// 		_thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
-// 	}
-
-// 	// Use tracking Anti-Windup for horizontal direction: during saturation, the integrator is used to unsaturate the output
-// 	// see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
-// 	const Vector2f acc_sp_xy_produced = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / _hover_thrust);
-// 	const float arw_gain = 2.f / _gain_vel_p(0);
-
-// 	// The produced acceleration can be greater or smaller than the desired acceleration due to the saturations and the actual vertical thrust (computed independently).
-// 	// The ARW loop needs to run if the signal is saturated only.
-// 	const Vector2f acc_sp_xy = _acc_sp.xy();
-// 	const Vector2f acc_limited_xy = (acc_sp_xy.norm_squared() > acc_sp_xy_produced.norm_squared())
-// 					? acc_sp_xy_produced
-// 					: acc_sp_xy;
-// 	vel_error.xy() = Vector2f(vel_error) - arw_gain * (acc_sp_xy - acc_limited_xy);
-
-// 	// Make sure integral doesn't get NAN
-// 	ControlMath::setZeroIfNanVector3f(vel_error);
-// 	// Update integral part of velocity control
-// 	_vel_int += vel_error.emult(_gain_vel_i) * dt;
-// }
+	// Estimate the optimal tilt angle and direction to conteract the wind
+	// Prioritize vertical control while keeping a horizontal margin
+	//Mode dependant with additional actuators is not needed
 
 
 
-// ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void PositionControl::_velocityControl(const float dt, const int vectoring_att_mode)
+	//Thrust XY
+	// Vector2f thrust_sp_xy(_thr_sp);
+	// float thrust_sp_xy_norm = thrust_sp_xy.norm();
+	const float thrust_max_squared = math::sq(_lim_thr_max);
+	// float thrust_max_xy = _lim_thr_max;
+
+	// if (thrust_sp_xy_norm > thrust_max_xy) {
+	// _thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
+	// }
+	PX4_INFO("Limit thrust max min vel x %f %f %f ", (double)_lim_thr_max,(double)_lim_thr_min,(double)_lim_vel_horizontal);
+
+
+	//Vertical thrust
+	const float thrust_z_max_squared = thrust_max_squared;// - math::sq(allocated_horizontal_thrust);
+	// Saturate maximal vertical thrust
+	_thr_sp(2) = math::max(_thr_sp(2), -sqrtf(thrust_z_max_squared));
+
+
+	//////Compare the merit of using an anti windup
+	// // Use tracking Anti-Windup for horizontal direction: during saturation, the integrator is used to unsaturate the output
+	// // see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
+	// Integrator anti-windup in vertical direction
+	// if ((_thr_sp(0) >= _lim_thr_min && vel_error(0) >= 0.0f) ||
+	// (_thr_sp(0) <= _lim_thr_max && vel_error(0) <= 0.0f)) {
+	// vel_error(0) = 0.f;
+	// }
+
+	// if ((_thr_sp(1) >= _lim_thr_min && vel_error(1) >= 0.0f) ||
+	// (_thr_sp(1) <= _lim_thr_max && vel_error(1) <= 0.0f)) {
+	// vel_error(1) = 0.f;
+	// }
+	//////Compare the merit of using an anti windup
+
+
+
+	// const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_hover_thrust));
+	float factor= 10.0;
+	const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_xy_factor*factor));
+	// PX4_INFO("New Thrust Components %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
+
+	const float arw_gain = 2.f / _gain_vel_p(0);
+	vel_error.xy() = Vector2f(vel_error) - (arw_gain * (Vector2f(_acc_sp) - acc_sp_xy_limited));
+
+	// Make sure integral doesn't get NAN
+	ControlMath::setZeroIfNanVector3f(vel_error);
+	// Update integral part of velocity control
+	//separate based on each individual velocity component
+	_vel_int += vel_error.emult(_gain_vel_i) * dt;
+
+	// limit thrust integral
+	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
+
+
+}
+
+//Custom//
+void PositionControl::_planar_accelerationControl()
+{
+
+	//divide by acceleration
+	Vector3f body_z = Vector3f(0, 0, CONSTANTS_ONE_G).normalized();
+	Vector3f thrz;
+	float collective_thrust = _acc_sp(2) * (_hover_thrust / CONSTANTS_ONE_G) - _hover_thrust;
+
+	float x_thrust= _acc_sp(0)*(_hover_thrust / CONSTANTS_ONE_G);// use a different value perhaps to scale XY since the hover value changes
+	float y_thrust= _acc_sp(1)*(_hover_thrust / CONSTANTS_ONE_G);
+	// PX4_INFO("XY thrust %f %f",(double)x_thrust,(double)y_thrust);
+
+	collective_thrust /= (Vector3f(0, 0, 1).dot(body_z));
+	collective_thrust = math::min(collective_thrust, -_lim_thr_min);
+	Vector3f bodyxy= Vector3f(x_thrust, y_thrust, 0.0).normalized();// normalized the xy vector
+
+
+	thrz= body_z * collective_thrust;
+
+	// Project thrust to planned body attitude
+	_thr_sp(0) = bodyxy(0);
+	_thr_sp(1) = bodyxy(1);
+	_thr_sp(2) =thrz(2);
+	// PX4_INFO("Thrust Components acceleration %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
+	//this thrust only depends of the Z axis
+}
+// Planar position control functions //////////////////////////////////////////////////////////////////////////////////////
+
+void PositionControl::_velocityControl(const float dt)
 {
 
 	// PID velocity control
@@ -228,127 +295,57 @@ void PositionControl::_velocityControl(const float dt, const int vectoring_att_m
 	ControlMath::addIfNotNanVector3f(_acc_sp, acc_sp_velocity);
 	//att_sp.thrust_body[2] = -thr_sp.length();
 
-	//if omni mode dont separate the thrust sp.
-	// Print an error if the omni_att_mode parameter is out of range
-	if (vectoring_att_mode > 6 || vectoring_att_mode< 0) {
-		PX4_ERR("Vectoring Mode parameter set to unknown value!");
+	_accelerationControl();
+
+	// Integrator anti-windup in vertical direction
+	if ((_thr_sp(2) >= -_lim_thr_min && vel_error(2) >= 0.0f) ||
+	(_thr_sp(2) <= -_lim_thr_max && vel_error(2) <= 0.0f)) {
+	vel_error(2) = 0.f;
 	}
 
-	//check value for the switch
-	switch (vectoring_att_mode) {
-	case 3:	{
+	// Estimate the optimal tilt angle and direction to conteract the wind
+	// Prioritize vertical control while keeping a horizontal margin
+	//Mode dependant with additional actuators is not needed
+	Vector2f thrust_sp_xy(_thr_sp);
+	float thrust_sp_xy_norm = thrust_sp_xy.norm();
+	const float thrust_max_squared = math::sq(_lim_thr_max);
 
-		_accelerationControl();
+	const float allocated_horizontal_thrust = math::min(thrust_sp_xy_norm, _lim_thr_xy_margin);
 
-		// Integrator anti-windup in vertical direction
-		if ((_thr_sp(2) >= -_lim_thr_min && vel_error(2) >= 0.0f) ||
-		(_thr_sp(2) <= -_lim_thr_max && vel_error(2) <= 0.0f)) {
-		vel_error(2) = 0.f;
-		}
+	const float thrust_z_max_squared = thrust_max_squared - math::sq(allocated_horizontal_thrust);
 
-		// Estimate the optimal tilt angle and direction to conteract the wind
-		// Prioritize vertical control while keeping a horizontal margin
-		//Mode dependant with additional actuators is not needed
-		Vector2f thrust_sp_xy(_thr_sp);
-		float thrust_sp_xy_norm = thrust_sp_xy.norm();
-		const float thrust_max_squared = math::sq(_lim_thr_max);
+	// Saturate maximal vertical thrust
+	_thr_sp(2) = math::max(_thr_sp(2), -sqrtf(thrust_z_max_squared));
 
-		const float allocated_horizontal_thrust = math::min(thrust_sp_xy_norm, _lim_thr_xy_margin);
+	// Determine how much horizontal thrust is left after prioritizing vertical control
+	const float thrust_max_xy_squared = thrust_max_squared - math::sq(_thr_sp(2));
+	float thrust_max_xy = 0;
 
-		const float thrust_z_max_squared = thrust_max_squared - math::sq(allocated_horizontal_thrust);
+	if (thrust_max_xy_squared > 0) {
+		thrust_max_xy = sqrtf(thrust_max_xy_squared);
+	}
 
-		// Saturate maximal vertical thrust
-		_thr_sp(2) = math::max(_thr_sp(2), -sqrtf(thrust_z_max_squared));
+	// Saturate thrust in horizontal direction
+	if (thrust_sp_xy_norm > thrust_max_xy) {
+		_thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
+	}
 
-		// Determine how much horizontal thrust is left after prioritizing vertical control
-		const float thrust_max_xy_squared = thrust_max_squared - math::sq(_thr_sp(2));
-		float thrust_max_xy = 0;
+	// // Use tracking Anti-Windup for horizontal direction: during saturation, the integrator is used to unsaturate the output
+	// // see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
+	const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_hover_thrust*2));
+	const float arw_gain = 2.f / _gain_vel_p(0);
+	vel_error.xy() = Vector2f(vel_error) - (arw_gain * (Vector2f(_acc_sp) - acc_sp_xy_limited));
 
-		if (thrust_max_xy_squared > 0) {
-			thrust_max_xy = sqrtf(thrust_max_xy_squared);
-		}
+	// Make sure integral doesn't get NAN
+	ControlMath::setZeroIfNanVector3f(vel_error);
+	// Update integral part of velocity control
+	_vel_int += vel_error.emult(_gain_vel_i) * dt;
 
-		// Saturate thrust in horizontal direction
-		if (thrust_sp_xy_norm > thrust_max_xy) {
-			_thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
-		}
+	// limit thrust integral
+	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
 
-		// // Use tracking Anti-Windup for horizontal direction: during saturation, the integrator is used to unsaturate the output
-		// // see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
-		const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_hover_thrust*2));
-		const float arw_gain = 2.f / _gain_vel_p(0);
-		vel_error.xy() = Vector2f(vel_error) - (arw_gain * (Vector2f(_acc_sp) - acc_sp_xy_limited));
 
-		// Make sure integral doesn't get NAN
-		ControlMath::setZeroIfNanVector3f(vel_error);
-		// Update integral part of velocity control
-		_vel_int += vel_error.emult(_gain_vel_i) * dt;
-
-		// limit thrust integral
-		_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
-
-		}break;//here
-	default:
-		_omni_accelerationControl();
-		// Integrator anti-windup in vertical direction
-		if ((_thr_sp(2) >= -_lim_thr_min && vel_error(2) >= 0.0f) ||
-		(_thr_sp(2) <= -_lim_thr_max && vel_error(2) <= 0.0f)) {
-		vel_error(2) = 0.f;
-		}
-
-		// Estimate the optimal tilt angle and direction to conteract the wind
-		// Prioritize vertical control while keeping a horizontal margin
-		//Mode dependant with additional actuators is not needed
-		Vector2f thrust_sp_xy(_thr_sp);
-		// float thrust_sp_xy_norm = thrust_sp_xy.norm();
-		const float thrust_max_squared = math::sq(_lim_thr_max);
-
-		// //increase value since
-		// thrust_sp_xy=thrust_sp_xy*5;
-		// thrust_sp_xy_norm = thrust_sp_xy.norm();
-
-		//const float margin(70);
-		//const float allocated_horizontal_thrust = math::min(thrust_sp_xy_norm, margin);
-		const float thrust_z_max_squared = thrust_max_squared;// - math::sq(allocated_horizontal_thrust);
-
-		// Saturate maximal vertical thrust
-		_thr_sp(2) = math::max(_thr_sp(2), -sqrtf(thrust_z_max_squared));
-
-		// Determine how much horizontal thrust is left after prioritizing vertical control
-		// const float thrust_max_xy_squared = thrust_max_squared ;//- math::sq(_thr_sp(2));
-		// float thrust_max_xy = 0;
-
-		// if (thrust_max_xy_squared > 0) {
-		// 	thrust_max_xy = sqrtf(thrust_max_xy_squared);
-		// }
-
-		// Saturate thrust in horizontal direction
-		// if (thrust_sp_xy_norm > thrust_max_xy) {
-		// 	_thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
-		// }
-		// // Use tracking Anti-Windup for horizontal direction: during saturation, the integrator is used to unsaturate the output
-		// // see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
-		float factor= 10.0;
-		const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_xy_factor*factor));
-		// PX4_INFO("New Thrust Components %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
-
-		const float arw_gain = 2.f / _gain_vel_p(0);
-		vel_error.xy() = Vector2f(vel_error) - (arw_gain * (Vector2f(_acc_sp) - acc_sp_xy_limited));
-
-		// Make sure integral doesn't get NAN
-		ControlMath::setZeroIfNanVector3f(vel_error);
-		// Update integral part of velocity control
-		_vel_int += vel_error.emult(_gain_vel_i) * dt;
-
-		// limit thrust integral
-		_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
-
-	//bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
-		// Determine how much vertical thrust is left keeping horizontal margin
-
-		}
 }
-// ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void PositionControl::_accelerationControl()
 {
 	// Assume standard acceleration due to gravity in vertical direction for attitude generation
@@ -366,33 +363,7 @@ void PositionControl::_accelerationControl()
 }
 
 
-//Custom//
-void PositionControl::_omni_accelerationControl()
-{
-	//divide by acceleration
-	Vector3f body_z = Vector3f(0, 0, CONSTANTS_ONE_G).normalized();
-	Vector3f thrz;
-	float collective_thrust = _acc_sp(2) * (_hover_thrust / CONSTANTS_ONE_G) - _hover_thrust;
 
-	float x_thrust= _acc_sp(0)*_xy_factor;// use a different value perhaps to scale XY since the hover value changes
-	float y_thrust= _acc_sp(1)*_xy_factor;
-
-	collective_thrust /= (Vector3f(0, 0, 1).dot(body_z));
-	collective_thrust = math::min(collective_thrust, -_lim_thr_min);
-	// PX4_INFO("Thrust Components acceleration %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
-
-	thrz= body_z * collective_thrust;
-
-	// Project thrust to planned body attitude
-	_thr_sp(0) = x_thrust;
-	_thr_sp(1) = y_thrust;
-	_thr_sp(2) =thrz(2);
-	// PX4_INFO("Thrust Components acceleration %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
-
-
-
-	//this thrust only depends of the Z axis
-}
 //END//
 
 bool PositionControl::_inputValid()

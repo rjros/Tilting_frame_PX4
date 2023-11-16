@@ -211,9 +211,13 @@ private:
 	bool _inputValid();
 
 	void _positionControl(); ///< Position proportional control
-	void _velocityControl(const float dt,const int att_mode); ///< Velocity PID control
+	void _velocityControl(const float dt); ///< Velocity PID control
 	void _accelerationControl(); ///< Acceleration setpoint processing
-	void _omni_accelerationControl();// separates thrust values if omni condition is on
+
+	// For the planar control of the system
+	void _planar_positionControl();// planar proportional position control
+	void _planar_velocityControl(const float dt);  //planar velocity control
+	void _planar_accelerationControl();// separates thrust values if omni condition is on
 
 
 	// Gains

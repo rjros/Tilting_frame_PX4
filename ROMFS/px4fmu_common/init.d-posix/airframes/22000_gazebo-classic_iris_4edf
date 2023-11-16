@@ -35,7 +35,7 @@ param set-default CA_ROTOR4_KM 0.00
 param set-default CA_ROTOR4_AX 0.0
 param set-default CA_ROTOR4_AY -1.0
 param set-default CA_ROTOR4_AZ 0.0
-# param set-default CA_ROTOR4_CT 1.96
+param set-default CA_ROTOR4_CT 1.96
 
 
 param set-default CA_ROTOR5_PX 0.00
@@ -44,7 +44,7 @@ param set-default CA_ROTOR5_KM 0.00
 param set-default CA_ROTOR5_AX 0.0
 param set-default CA_ROTOR5_AY 1.0
 param set-default CA_ROTOR5_AZ 0.0
-# param set-default CA_ROTOR5_CT 1.96
+param set-default CA_ROTOR5_CT 1.96
 
 #Front fan, pushes back
 param set-default CA_ROTOR6_PX 0.15
@@ -53,7 +53,7 @@ param set-default CA_ROTOR6_KM 0.00
 param set-default CA_ROTOR6_AX -1.0
 param set-default CA_ROTOR6_AY 0.0
 param set-default CA_ROTOR6_AZ 0.0
-# param set-default CA_ROTOR6_CT 1.96
+param set-default CA_ROTOR6_CT 1.96
 
 #Back fan, pushes front
 param set-default CA_ROTOR7_PX -0.15
@@ -62,7 +62,7 @@ param set-default CA_ROTOR7_KM 0.00
 param set-default CA_ROTOR7_AX 1.0
 param set-default CA_ROTOR7_AY 0.0
 param set-default CA_ROTOR7_AZ 0.0
-# param set-default CA_ROTOR7_CT 1.96
+param set-default CA_ROTOR7_CT 1.96
 
 
 param set-default PWM_MAIN_FUNC1 101
