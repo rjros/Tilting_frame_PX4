@@ -96,5 +96,16 @@ PARAM_DEFINE_FLOAT(FW_ANGLE, 0);
 PARAM_DEFINE_FLOAT(BW_ANGLE, 0);
 
 
+/**
+ * Parameters that need an RC input, will be manually entered on QgroundControl manually.
+ *
+ * @min 0
+ * @max 1
+ * @value 0 Simulation
+ * @value 1 RC
+ */
+PARAM_DEFINE_INT32(RC_SIM, 1);
+
+
 
 

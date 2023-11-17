@@ -212,6 +212,7 @@ private:
 		(ParamFloat<px4::params::MPC_Z_VEL_ALL>)    _param_mpc_z_vel_all,
 
 		// Omni-directional vehicle parameters
+		(ParamInt<px4::params::RC_SIM>) _param_rc_sim_mode,
 		(ParamInt<px4::params::VECT_ATT_MODE>) _param_vectoring_att_mode,
 		//Manual control of the orientation
 		(ParamInt<px4::params::MAN_ATT_DIR>) _param_vectoring_manual_dir,
