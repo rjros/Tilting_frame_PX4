@@ -89,11 +89,19 @@ public:
 	void setPositionGains(const matrix::Vector3f &P) { _gain_pos_p = P; }
 
 
+	// /**
+	//  * Set the planar position control gains
+	//  * @param P 3D vector of proportional gains for x,y,z axis
+	//  */
+	// void setPlanarPositionGains(const matrix::Vector3f &P) { _gain_planar_pos_p = P; }
+
 	/**
-	 * Set the planar position control gains
+	 * Set the velocity control gains
 	 * @param P 3D vector of proportional gains for x,y,z axis
+	 * @param I 3D vector of integral gains
+	 * @param D 3D vector of derivative gains
 	 */
-	void setPlanarPositionGains(const matrix::Vector3f &P) { _gain_planar_pos_p = P; }
+	void setPlanarPositionGains(const matrix::Vector3f &P, const matrix::Vector3f &I, const matrix::Vector3f &D);
 
 	/**
 	 * Set the velocity control gains
@@ -239,9 +247,9 @@ private:
 	void _accelerationControl(); ///< Acceleration setpoint processing
 
 	// For the planar control of the system
-	void _planar_positionControl();// planar proportional position control
+	void _planar_positionControl(const float dt,const float yaw_sp);// planar proportional position control
 	void _planar_velocityControl(const float dt,const float yaw_sp);  //planar velocity control
-	void _planar_accelerationControl();// separates thrust values if omni condition is on
+	void _planar_accelerationControl(const float yaw_sp);// separates thrust values if omni condition is on
 
 
 	// Gains
@@ -251,6 +259,10 @@ private:
 	matrix::Vector3f _gain_vel_d; ///< Velocity control derivative gain
 	//Gains for the planar controller//
 	matrix::Vector3f _gain_planar_pos_p;///< Position control proportional gain
+	matrix::Vector3f _gain_planar_pos_i;///< Position control proportional gain
+	matrix::Vector3f _gain_planar_pos_d;///< Position control proportional gain
+
+
 	matrix::Vector3f _gain_planar_vel_p; ///< Velocity control proportional gain
 	matrix::Vector3f _gain_planar_vel_i; ///< Velocity control integral gain
 	matrix::Vector3f _gain_planar_vel_d; ///< Velocity control derivative gain
@@ -277,6 +289,8 @@ private:
 	// States
 	matrix::Vector3f _pos; /**< current position */
 	matrix::Vector3f _vel; /**< current velocity */
+	matrix::Vector3f _pos_int; /**< current velocity */
+
 	matrix::Vector3f _vel_dot; /**< velocity derivative (replacement for acceleration estimate) */
 	matrix::Vector3f _vel_int; /**< integral term of the velocity controller */
 	float _yaw{}; /**< current heading */

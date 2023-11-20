@@ -172,11 +172,11 @@ void MulticopterPositionControl::parameters_update(bool force)
 		_control.setHorizontalThrustMargin(_param_mpc_thr_xy_marg.get());
 
 		//Control Gains fot the planar control
-		_control.setPlanarPositionGains(Vector3f(_param_mpc_pxy_pos_p_vel.get(), _param_mpc_pxy_pos_p_vel.get(), _param_mpc_z_p.get()));
-		// _control.setPlanarPositionGains(
-		// 	Vector3f(_param_mpc_pxy_pos_p_vel.get(), _param_mpc_pxy_pos_p_vel.get(), _param_mpc_z_p.get()),
-		// 	Vector3f(_param_mpc_pxy_pos_i_vel.get(),_param_mpc_pxy_pos_i_vel.get(), 0.0f),
-		// 	Vector3f(_param_mpc_pxy_pos_d_vel.get(),_param_mpc_pxy_pos_d_vel.get(), 0.0f));
+		// _control.setPlanarPositionGains(Vector3f(_param_mpc_pxy_pos_p_vel.get(), _param_mpc_pxy_pos_p_vel.get(), _param_mpc_z_p.get()));
+		_control.setPlanarPositionGains(
+			Vector3f(_param_mpc_pxy_pos_p_vel.get(), _param_mpc_pxy_pos_p_vel.get(), _param_mpc_z_p.get()),
+			Vector3f(_param_mpc_pxy_pos_i_vel.get(),_param_mpc_pxy_pos_i_vel.get(), 0.0f),
+			Vector3f(_param_mpc_pxy_pos_d_vel.get(),_param_mpc_pxy_pos_d_vel.get(), 0.0f));
 
 		_control.setPlanarVelocityGains(
 			Vector3f(_param_mpc_pxy_vel_p_acc.get(), _param_mpc_pxy_vel_p_acc.get(), _param_mpc_z_vel_p_acc.get()),
@@ -574,6 +574,18 @@ void MulticopterPositionControl::Run()
 			}
 
 			_control.setState(states);
+
+			// _control.setPlanarPositionGains(Vector3f(_param_mpc_pxy_pos_p_vel.get(), _param_mpc_pxy_pos_p_vel.get(), _param_mpc_z_p.get()));
+			_control.setPlanarPositionGains(
+			Vector3f(_param_mpc_pxy_pos_p_vel.get(), _param_mpc_pxy_pos_p_vel.get(), _param_mpc_z_p.get()),
+			Vector3f(_param_mpc_pxy_pos_i_vel.get(),_param_mpc_pxy_pos_i_vel.get(), 0.0f),
+			Vector3f(_param_mpc_pxy_pos_d_vel.get(),_param_mpc_pxy_pos_d_vel.get(), 0.0f));
+
+			_control.setPlanarVelocityGains(
+			Vector3f(_param_mpc_pxy_vel_p_acc.get(), _param_mpc_pxy_vel_p_acc.get(), _param_mpc_z_vel_p_acc.get()),
+			Vector3f(_param_mpc_pxy_vel_i_acc.get(), _param_mpc_pxy_vel_i_acc.get(), _param_mpc_z_vel_i_acc.get()),
+			Vector3f(_param_mpc_pxy_vel_d_acc.get(), _param_mpc_pxy_vel_d_acc.get(), _param_mpc_z_vel_d_acc.get()));
+			//Control Gains fot the planar control
 
 			// Run position control
 			if (!_control.update(dt,_param_vectoring_att_mode.get())) {
