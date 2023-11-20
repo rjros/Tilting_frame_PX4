@@ -151,7 +151,6 @@ private:
 	DEFINE_PARAMETERS(
 		// Position Control
 		(ParamFloat<px4::params::MPC_XY_P>)         _param_mpc_xy_p,
-		(ParamFloat<px4::params::MPC_PXY_P>)        _param_mpc_pxy_p, //for planar controller
 		(ParamFloat<px4::params::MPC_Z_P>)          _param_mpc_z_p,
 		(ParamFloat<px4::params::MPC_XY_VEL_P_ACC>) _param_mpc_xy_vel_p_acc,
 		(ParamFloat<px4::params::MPC_XY_VEL_I_ACC>) _param_mpc_xy_vel_i_acc,
@@ -160,6 +159,9 @@ private:
 		(ParamFloat<px4::params::MPC_Z_VEL_I_ACC>)  _param_mpc_z_vel_i_acc,
 		(ParamFloat<px4::params::MPC_Z_VEL_D_ACC>)  _param_mpc_z_vel_d_acc,
 		//Planar controller variables
+		(ParamFloat<px4::params::MPC_PXY_P>) _param_mpc_pxy_pos_p_vel,
+		(ParamFloat<px4::params::MPC_PXY_I>) _param_mpc_pxy_pos_i_vel,
+		(ParamFloat<px4::params::MPC_PXY_D>) _param_mpc_pxy_pos_d_vel,
 		(ParamFloat<px4::params::MPC_PXY_VEL_P_A>) _param_mpc_pxy_vel_p_acc,
 		(ParamFloat<px4::params::MPC_PXY_VEL_I_A>) _param_mpc_pxy_vel_i_acc,
 		(ParamFloat<px4::params::MPC_PXY_VEL_D_A>) _param_mpc_pxy_vel_d_acc,

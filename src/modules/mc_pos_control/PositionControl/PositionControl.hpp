@@ -240,7 +240,7 @@ private:
 
 	// For the planar control of the system
 	void _planar_positionControl();// planar proportional position control
-	void _planar_velocityControl(const float dt);  //planar velocity control
+	void _planar_velocityControl(const float dt,const float yaw_sp);  //planar velocity control
 	void _planar_accelerationControl();// separates thrust values if omni condition is on
 
 

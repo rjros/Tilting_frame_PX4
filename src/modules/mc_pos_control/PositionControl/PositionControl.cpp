@@ -143,9 +143,10 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode)
 		}break;//here
 	default:
 		_planar_positionControl();
-		_planar_velocityControl(dt);
 		_yawspeed_sp = PX4_ISFINITE(_yawspeed_sp) ? _yawspeed_sp : 0.f;//yaw control can be separated based on 2 matrices
 		_yaw_sp = PX4_ISFINITE(_yaw_sp) ? _yaw_sp : _yaw; // TODO: better way to disable yaw control
+		_planar_velocityControl(dt,_yaw_sp);
+
 		}
 	}
 
@@ -190,7 +191,7 @@ void PositionControl::_planar_positionControl()
 	_vel_sp(2) = math::constrain(_vel_sp(2), -_lim_vel_up, _lim_vel_down);
 }
 
-void PositionControl::_planar_velocityControl(const float dt)
+void PositionControl::_planar_velocityControl(const float dt,const float yaw_sp)
 {
 	// PID velocity control
 	Vector3f vel_error = _vel_sp - _vel;
@@ -199,7 +200,6 @@ void PositionControl::_planar_velocityControl(const float dt)
 	Vector3f acc_sp_velocity = vel_error.emult(_gain_planar_vel_p) + _vel_int - _vel_dot.emult(_gain_planar_vel_d);
 
 	ControlMath::addIfNotNanVector3f(_acc_sp, acc_sp_velocity);
-
 
 	_planar_accelerationControl();
 	//Vertical acceleration
@@ -210,13 +210,6 @@ void PositionControl::_planar_velocityControl(const float dt)
 	}
 
 	const float thrust_max_squared = math::sq(_lim_thr_max);
-	// float thrust_max_xy = _lim_thr_max;
-
-	// if (thrust_sp_xy_norm > thrust_max_xy) {
-	// _thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
-	// }
-	// PX4_INFO("Limit thrust max min vel x %f %f %f ", (double)_lim_thr_max,(double)_lim_thr_min,(double)_lim_vel_horizontal);
-
 
 	//Vertical thrust
 	const float thrust_z_max_squared = thrust_max_squared;// - math::sq(allocated_horizontal_thrust);
@@ -229,70 +222,64 @@ void PositionControl::_planar_velocityControl(const float dt)
 	// see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
 	// Integrator anti-windup in vertical direction
 
+	//Rotate the thrust
+	matrix::Dcmf _rotation,_rotation2;
+	_rotation = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, -yaw_sp}};
+	_rotation2 = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, yaw_sp}};
 
+	Vector3f thr_sp_xy=_rotation * Vector3f{_thr_sp(0),_thr_sp(1),0};
+	//separate the thrust for each sign
 
-	if ((abs(_thr_sp(0)) >= _lim_planar_thr_max && vel_error(0) >= 0.0f) ||
-	(abs(_thr_sp(0)) <= _lim_planar_thr_min && vel_error(0) <= 0.0f)) {
-	vel_error(0) = 0.f;
+	if(thr_sp_xy(0)>=0.0f)
+	{
+		if ((thr_sp_xy(0) >= _lim_planar_thr_max && vel_error(0) >= 0.0f) ||
+		(thr_sp_xy(0)<= _lim_planar_thr_min && vel_error(0) <= 0.0f)) {
+		vel_error(0) = 0.f;
+		}
 	}
 
+	else {
+		if ((thr_sp_xy(0) <= -_lim_planar_thr_max && vel_error(0) <= 0.0f) ||
+		(thr_sp_xy(0)>= -_lim_planar_thr_min && vel_error(0) >= 0.0f)) {
+		vel_error(0) = 0.f;
+		}
 
-	if ((abs(_thr_sp(1)) >= _lim_planar_thr_max && vel_error(1) >= 0.0f) ||
-	(abs(_thr_sp(1)) <= _lim_planar_thr_min && vel_error(1) <= 0.0f)) {
-	vel_error(1) = 0.f;
 	}
 
-	// if (_thr_sp(0)>=0.0f)
-	// {
-	// 	if ((_thr_sp(0) >= _lim_planar_thr_max && vel_error(0) >= 0.0f) ||
-	// 	(_thr_sp(0) <= _lim_planar_thr_min && vel_error(0) <= 0.0f)) {
-	// 	vel_error(0) = 0.f;
-	// 	}
+	if(thr_sp_xy(1)>=0.0f)
+	{
+		if ((thr_sp_xy(1) >= _lim_planar_thr_max && vel_error(1) >= 0.0f) ||
+		(thr_sp_xy(1)<= _lim_planar_thr_min && vel_error(1) <= 0.0f)) {
+		vel_error(1) = 0.f;
+		}
+	}
+
+	else {
+		if ((thr_sp_xy(1) <= -_lim_planar_thr_max && vel_error(1) <= 0.0f) ||
+		(thr_sp_xy(1)>= -_lim_planar_thr_min && vel_error(1) >= 0.0f)) {
+		vel_error(1) = 0.f;
+		}
+
+	}
+	// if ((thr_sp_xy(0) >= _lim_planar_thr_max && vel_error(0) <= 0.0f) ||
+	// (thr_sp_xy(0)<= -_lim_planar_thr_max && vel_error(0) <= 0.0f)) {
+	// vel_error(0) = 0.f;
 	// }
 
-	// else
-	// {
-	// 	if ((_thr_sp(0) <= -_lim_planar_thr_max && vel_error(0) <= 0.0f) ||
-	// 	(_thr_sp(0) >= -_lim_planar_thr_min && vel_error(0) >= 0.0f)) {
-	// 	vel_error(0) = 0.f;
-	// 	}
+	// if ((thr_sp_xy(1)>= _lim_planar_thr_max && vel_error(1) >= 0.0f) ||
+	// (thr_sp_xy(1)<= -_lim_planar_thr_max && vel_error(1) <= 0.0f)) {
+	// vel_error(1) = 0.f;
 	// }
 
-	// if (_thr_sp(1)>=0.0f)
-	// {
-	// 	if ((_thr_sp(1) >= _lim_planar_thr_max && vel_error(1) <= 0.0f) ||
-	// 	(_thr_sp(1) <= _lim_planar_thr_min && vel_error(1) <= 0.0f)) {
-	// 	vel_error(1) = 0.f;
-	// 	}
-	// }
-
-	// else
-	// {
-	// 	if ((_thr_sp(1) <= -_lim_planar_thr_max && vel_error(1) <= 0.0f) ||
-	// 	(_thr_sp(1) >= -_lim_planar_thr_min && vel_error(1) >= 0.0f)) {
-	// 	vel_error(1) = 0.f;
-	// 	}
-	// }
-
-
-
-	// PX4_INFO("Velocity Error %f %f %f",(double)_vel(0),(double)_vel(1),(double)_vel(2));
-	//////Compare the merit of using an anti windup
-	//saturate The Vectors
-	_thr_sp(0)=_thr_sp(0)>0.0f? math::min(_thr_sp(0),_lim_planar_thr_max): math::max(_thr_sp(0),-_lim_planar_thr_max);
-	_thr_sp(1)=_thr_sp(1)>0.0f? math::min(_thr_sp(1),_lim_planar_thr_max): math::max(_thr_sp(1),-_lim_planar_thr_max);
+	_thr_sp(0)=_thr_sp(0)>=0.0f? math::min(_thr_sp(0),_lim_planar_thr_max): math::min(_thr_sp(0),-_lim_planar_thr_max);
+	_thr_sp(1)=_thr_sp(1)>=0.0f? math::min(_thr_sp(1),_lim_planar_thr_max): math::min(_thr_sp(1),-_lim_planar_thr_max);
 
 	PX4_INFO("Th %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
 
+	thr_sp_xy=_rotation2*Vector3f{thr_sp_xy(0),thr_sp_xy(1),0};
+	_thr_sp.xy()=thr_sp_xy.xy();
 
 
-	// const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_hover_thrust));
-	// float factor= 2.0;
-	// const Vector2f acc_sp_xy_limited = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / (_xy_factor*factor));
-	// PX4_INFO("New Thrust Components %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
-
-	// const float arw_gain = 2.f / _gain_planar_vel_p(0);
-	// vel_error.xy() = Vector2f(vel_error) - (arw_gain * (Vector2f(_acc_sp) - acc_sp_xy_limited));
 
 	// Make sure integral doesn't get NAN
 	ControlMath::setZeroIfNanVector3f(vel_error);
@@ -303,6 +290,8 @@ void PositionControl::_planar_velocityControl(const float dt)
 
 	// limit thrust integral
 	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
+	PX4_INFO("Ve %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
+
 
 
 }
@@ -322,7 +311,8 @@ void PositionControl::_planar_accelerationControl()
 
 	collective_thrust /= (Vector3f(0, 0, 1).dot(body_z));
 	collective_thrust = math::min(collective_thrust, -_lim_thr_min);
-	Vector3f bodyxy= Vector3f(x_thrust, y_thrust, 0.0).normalized();// normalized the xy vector
+	//independent of each other, no need to normalize
+	Vector3f bodyxy= Vector3f(x_thrust, y_thrust, 0.0);// normalized the xy vector
 
 
 	thrz= body_z * collective_thrust;
@@ -395,6 +385,10 @@ void PositionControl::_velocityControl(const float dt)
 
 	// limit thrust integral
 	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
+	PX4_INFO("Th %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
+	PX4_INFO("Vel %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
+
+
 
 
 }
@@ -473,4 +467,3 @@ void PositionControl::getAttitudeSetpoint(const matrix::Quatf &att, const int ve
 	ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, att, vectoring_att_mode,attitude_setpoint, thrust_vectoring_status);
 	attitude_setpoint.yaw_sp_move_rate = _yawspeed_sp;
 }
-
