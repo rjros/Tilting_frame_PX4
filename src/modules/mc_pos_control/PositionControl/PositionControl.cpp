@@ -207,13 +207,17 @@ void PositionControl::_planar_positionControl(const float dt, const float yaw_sp
 	// vel_sp_position(0)+=_pos_int(0) -_vel(0)*_gain_planar_pos_d(0);
 	// vel_sp_position(1)+=_pos_int(1) - _vel(1)*_gain_planar_pos_d(1);
 
+	// Update integral part of velocity control
+	//separate based on each individual velocity component
+	_pos_int =_pos_int + pos_error.emult(_gain_planar_pos_i) * dt;
+
 	ControlMath::addIfNotNanVector3f(_vel_sp, vel_sp_position);
 	// make sure there are no NAN elements for further reference while constraining
-	ControlMath::setZeroIfNanVector3f(vel_sp_position);
+	// ControlMath::setZeroIfNanVector3f(vel_sp_position);
 
 	// Update integral part of velocity control
 	//separate based on each individual velocity component
-	// _pos_int += pos_error.emult(_gain_planar_pos_i) * dt;
+	_pos_int = pos_error.emult(_gain_planar_pos_i) * dt;
 
 	matrix::Dcmf _rotation,_rotation2;
 	_rotation = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, -yaw_sp}};
@@ -226,7 +230,9 @@ void PositionControl::_planar_positionControl(const float dt, const float yaw_sp
 	vel_sp_xy=_rotation2*Vector3f{vel_sp_xy(0),vel_sp_xy(1),0};
 	_vel_sp.xy()=vel_sp_xy.xy();
 
-	PX4_INFO("Pos_error %f %f %f",(double)pos_error(0),(double)pos_error(1),(double)pos_error(2));
+	// PX4_INFO("Pos_error %f %f %f",(double)pos_error(0),(double)pos_error(1),(double)pos_error(2));
+	PX4_INFO("Vel setpoint differences %f %f ",(double)_vel_sp(0),(double)_pos_int(0));
+
 
 
 	//Should remain as close as possible as the tilting mode, so the velocity limits will reamain
@@ -352,12 +358,10 @@ void PositionControl::_planar_accelerationControl(const float yaw_sp)
 	Vector3f thrz;
 	float collective_thrust = _acc_sp(2) * (_hover_thrust / CONSTANTS_ONE_G) - _hover_thrust;
 
-
-
 	collective_thrust /= (Vector3f(0, 0, 1).dot(body_z));
 	collective_thrust = math::min(collective_thrust, -_lim_thr_min);
 	float x_thrust= _acc_sp(0)*(_hover_thrust);// use a different value perhaps to scale XY since the hover value changes
-	float y_thrust= _acc_sp(1)*(_hover_thrust);
+	float y_thrust= _acc_sp(1)*(_hover_thrust);//similar to the weight of the uav
 	//independent of each other, no need to normalize
 	Vector3f bodyxy= Vector3f(x_thrust, y_thrust, 0.0);// normalized the xy vector
 
