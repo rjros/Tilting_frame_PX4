@@ -7,6 +7,7 @@
 # @type Hexarotor x
 #
 
+# Assume the edfs' 0 position is facing the z axis
 . ${R}etc/init.d/rc.mc_defaults
 
 #Frame Configuration information
@@ -43,17 +44,17 @@ param set-default CA_ROTOR5_KM -0.05
 param set-default CA_ROTOR6_PX 0.00
 param set-default CA_ROTOR6_PY -0.250
 param set-default CA_ROTOR6_KM 0.00
-param set-default CA_ROTOR6_AX 0.0
-param set-default CA_ROTOR6_AY 0.0
-param set-default CA_ROTOR6_AZ 0.0
+# param set-default CA_ROTOR6_AX 0.0
+# param set-default CA_ROTOR6_AY 0.0
+# param set-default CA_ROTOR6_AZ 0.0
 
 
 param set-default CA_ROTOR7_PX 0.00
 param set-default CA_ROTOR7_PY 0.250
 param set-default CA_ROTOR7_KM 0.00
-param set-default CA_ROTOR7_AX 0.0
-param set-default CA_ROTOR7_AY 0.0
-param set-default CA_ROTOR7_AZ 0.0
+# param set-default CA_ROTOR7_AX 0.0
+# param set-default CA_ROTOR7_AY 0.0
+# param set-default CA_ROTOR7_AZ 0.0
 
 
 # #TILT PARAMS

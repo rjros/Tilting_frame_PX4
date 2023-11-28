@@ -585,6 +585,9 @@ ControlAllocator::Run()
 		// update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
 
 		// Set control setpoint vector(s)
+		//separate or distribute based on the modes, available
+		//Use the propellers to keep the yaw or use a proportion of each
+
 		matrix::Vector<float, NUM_AXES> c[ActuatorEffectiveness::MAX_NUM_MATRICES];
 		c[0](0) = _torque_sp(0);
 		c[0](1) = _torque_sp(1);

@@ -623,7 +623,6 @@ void MulticopterPositionControl::Run()
 
 			///////////////////////////////////////////////////////////
 			//Add condition for selecting between rc or saved condition
-			//Get omni mode from rc
 
 			if (_param_rc_sim_mode.get()==1)
 			{
@@ -639,13 +638,6 @@ void MulticopterPositionControl::Run()
 				vectoring_status.manual_orientation=switches.orientation_switch;
 
 			}
-			// // param_t vectoring_param = param_handle(px4::params::VECT_ATT_MODE);
-			// param_t angle_param =param_handle(px4::params::MAN_ATT_DIR);
-			// manual_control_switches_sub.update(&switches);
-			// int32_t att_mode= switches.vectoring_switch;
-			// int32_t orientation =switches.orientation_switch;
-			// param_set(vectoring_param,&att_mode);
-			// param_set(angle_param,&orientation);
 
 			///////////////////////////////////////////////////////////
 			//Add condition for selecting between rc or saved condition
@@ -655,8 +647,9 @@ void MulticopterPositionControl::Run()
 
 
 			//Angles for the tilting
-			vectoring_status.forward_angle=math::radians(_param_forward_angle.get());
-			vectoring_status.backward_angle=math::radians(_param_backward_angle.get());
+			//offset for the sim
+			vectoring_status.forward_angle=math::radians(_param_forward_angle.get()-90.0f);
+			vectoring_status.backward_angle=math::radians(_param_backward_angle.get()-90.0f);
 
 			_thrust_vectoring_status_pub.publish(vectoring_status);
 

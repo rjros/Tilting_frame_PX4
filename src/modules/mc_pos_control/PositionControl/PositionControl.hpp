@@ -246,6 +246,11 @@ private:
 	void _velocityControl(const float dt); ///< Velocity PID control
 	void _accelerationControl(); ///< Acceleration setpoint processing
 
+	//For the tilted control of the  system
+	void _tilted_positionControl(const float dt,const float yaw_sp);
+	void _tilted_velocityControl(const float dt,const float yaw_sp);  //planar velocity control
+	void _tilted_accelerationControl(const float yaw_sp);// separates thrust values if omni condition is on
+
 	// For the planar control of the system
 	void _planar_positionControl(const float dt,const float yaw_sp);// planar proportional position control
 	void _planar_velocityControl(const float dt,const float yaw_sp);  //planar velocity control
