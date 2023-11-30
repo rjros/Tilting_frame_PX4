@@ -192,22 +192,22 @@ void PositionControl::_tilted_positionControl(const float dt,const float yaw_sp)
 
 	// Constrain horizontal velocity by prioritizing the velocity component along the
 	// the desired position setpoint over the feed-forward term.
-	// matrix::Dcmf _rotation,_rotation2;
-	// _rotation = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, -_yaw_sp}};
-	// _rotation2 = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, _yaw_sp}};
-	// Vector3f vel_body_xy=_rotation * Vector3f{_vel_sp(0),_vel_sp(1),0};
-	// // if(vel_body_xy(0)>0)
-	// {
-	// 	vel_body_xy(0) = math::constrain(vel_body_xy(0), -_lim_vel_horizontal, _lim_vel_horizontal);
-	// 	vel_body_xy(1) = math::constrain(vel_body_xy(1), -_lim_vel_horizontal, _lim_vel_horizontal);
+	matrix::Dcmf _rotation,_rotation2;
+	_rotation = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, -_yaw_sp}};
+	_rotation2 = matrix::Dcmf{matrix::Eulerf{0.f, 0.f, _yaw_sp}};
+	Vector3f vel_body_xy=_rotation * Vector3f{_vel_sp(0),_vel_sp(1),0};
+	if(vel_body_xy(0)>0)
+	{
+		vel_body_xy(0) = math::constrain(vel_body_xy(0), -_lim_vel_horizontal, _lim_vel_horizontal);
+		vel_body_xy(1) = math::constrain(vel_body_xy(1), -_lim_vel_horizontal, _lim_vel_horizontal);
 
-	// }
-	// else
-	// {
-	// 	vel_body_xy.xy() = ControlMath::constrainXY(vel_sp_position.xy(), (_vel_sp - vel_sp_position).xy(), _lim_vel_horizontal);
+	}
+	else
+	{
+		vel_body_xy.xy() = ControlMath::constrainXY(vel_sp_position.xy(), (_vel_sp - vel_sp_position).xy(), _lim_vel_horizontal);
 
-	// }
-	// vel_body_xy.xy() = ControlMath::constrainXY(vel_sp_position.xy(), (_vel_sp - vel_sp_position).xy(), _lim_vel_horizontal);
+	}
+	vel_body_xy.xy() = ControlMath::constrainXY(vel_sp_position.xy(), (_vel_sp - vel_sp_position).xy(), _lim_vel_horizontal);
 
 	_vel_sp.xy() = ControlMath::constrainXY(vel_sp_position.xy(), (_vel_sp - vel_sp_position).xy(), _lim_vel_horizontal);
 	// Constrain velocity in z-direction.
@@ -534,8 +534,6 @@ void PositionControl::_planar_velocityControl(const float dt,const float yaw_sp)
 	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
 	// PX4_INFO("Ve %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
 
-
-
 }
 
 //Custom//
@@ -627,11 +625,8 @@ void PositionControl::_velocityControl(const float dt)
 
 	// limit thrust integral
 	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
-	PX4_INFO("Th %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
+	// PX4_INFO("Th %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
 	// PX4_INFO("Vel %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
-
-
-
 
 
 }

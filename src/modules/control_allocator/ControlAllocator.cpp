@@ -713,7 +713,7 @@ ControlAllocator::Run()
 			// _control_allocation[1]->setControlSetpoint(c[0]);
 			// _control_allocation[1]->allocate();
 			// lateral_actuator_sp = _control_allocation[1]->getActuatorSetpoint();//_control_allocation[1]->getActuatorSetpoint();
-			// // PX4_INFO("v_sp %d : %f ", 0, (double)lateral_actuator_sp(0));
+			// PX4_INFO("v_sp %d : %f ", 0, (double)lateral_actuator_sp(0));
 
 
 		}

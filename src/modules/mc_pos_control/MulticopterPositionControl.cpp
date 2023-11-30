@@ -643,6 +643,9 @@ void MulticopterPositionControl::Run()
 			//Add condition for selecting between rc or saved condition
 			vectoring_status.att_mode = _param_vectoring_att_mode.get();
 			vectoring_status.manual_orientation = _param_vectoring_manual_dir.get();
+			vectoring_status.torque_percentage= _param_torque_distribution.get();
+
+			// PX4_INFO("Current torque dist %f ",(double)vectoring_status.torque_percentage);
 
 
 

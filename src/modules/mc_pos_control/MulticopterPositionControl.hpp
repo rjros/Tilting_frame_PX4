@@ -224,7 +224,9 @@ private:
 		(ParamInt<px4::params::RC_ANGLE_SW>) _param_rc_orientation_sw,
 		//Angle Information
 		(ParamFloat<px4::params::FW_ANGLE>) _param_forward_angle,
-		(ParamFloat<px4::params::BW_ANGLE>) _param_backward_angle
+		(ParamFloat<px4::params::BW_ANGLE>) _param_backward_angle,
+		//Torque/Force Distribution
+		(ParamFloat<px4::params::TORQUE_DIST>) _param_torque_distribution
 
 	);
 

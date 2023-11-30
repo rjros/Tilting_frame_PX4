@@ -70,6 +70,7 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 	default: //Altitude is calculated from the desired thrust direction
 		// thrustToZeroTiltAttitude(thr_sp, yaw_sp, att,att_sp);
 		thrustTofixedPitchAttitude(thr_sp, yaw_sp, att,att_sp);
+
 	}
 
 	// Estimate the optimal tilt angle and direction to counteract the wind
@@ -83,12 +84,8 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 	for (int i = 0; i < 3; i++) {
 		cmd_z(i) = R_cmd(i, 2);
 	}
-	//remove this topic information
-	thrust_vectoring_status.tilt_angle_est = asinf(Vector2f(cmd_z(0), cmd_z(1)).norm() / cmd_z.norm());
+	// PX4_INFO("Orientation  %f %f %f",(double)math::degrees(att_sp.roll_body),(double)math::degrees(att_sp.pitch_body),(double)math::degrees(att_sp.yaw_body));
 
-	thrust_vectoring_status.tilt_direction_est = wrap_2pi(atan2f(-cmd_z(1), -cmd_z(0)));
-	thrust_vectoring_status.tilt_roll_est = att_sp.roll_body;
-	thrust_vectoring_status.tilt_pitch_est = att_sp.pitch_body;
 
 	// Calculate the current z axis
 	Vector3f curr_z;
@@ -113,15 +110,12 @@ void thrustTofixedPitchAttitude(const Vector3f &thr_sp, const float yaw_sp, cons
 	Vector3f body_x={0.0f,0.0f,0.0f};
 	//check the magnitude of the horizontal vector in the body frame
 	Vector3f thrust_sp_xy=_rotation * Vector3f{thr_sp(0),thr_sp(1),thr_sp(2)};
-	thrust_sp_xy(0)=thrust_sp_xy(0);//*1.10f;
-	//
-	// ("Thrust in the setpoint %f %f %f ",(double)thr_sp(0),(double)thr_sp(1),(double)thr_sp(2));
-	thrust_sp_xy=_rotation2*Vector3f{thrust_sp_xy(0),thrust_sp_xy(1),thrust_sp_xy(2)};
+	thrust_sp_xy=_rotation2*Vector3f{thrust_sp_xy(0),0.f,0.f};
 	//Increase the x axis by a X factor
 	// thrust_sp_xy.normalize();
 
-	// Vector3f body_z=-thr_sp;// thrust vector that comes
-	Vector3f body_z=-thrust_sp_xy;// thrust vector modified
+	Vector3f body_z=-thr_sp;// thrust vector that comes
+	// Vector3f body_z=-thrust_sp_xy;// thrust vector modified
 
 	//check thrust vector
 	Vector3f thrust_rotated = _rotation * matrix::Vector3f{(float)-body_z(0), (float)-body_z(1), (float)-body_z(2)};
@@ -187,11 +181,13 @@ void thrustTofixedPitchAttitude(const Vector3f &thr_sp, const float yaw_sp, cons
 	att_sp.pitch_body = euler.theta();
 	att_sp.yaw_body = euler.psi();
 
+	//thrust from the x axis
+	att_sp.thrust_body[0] = thrust_sp_xy.dot(body_x);//value of the thrust
+	att_sp.thrust_body[1] = thrust_sp_xy.dot(body_y);// not the same
+	att_sp.thrust_body[2] = thr_sp.dot(body_z);//value of the z thrust
 
-	att_sp.thrust_body[0] = thrust_sp_xy.dot(body_x);
-	att_sp.thrust_body[1] = thrust_sp_xy.dot(body_y);
-	att_sp.thrust_body[2] = thrust_sp_xy.dot(body_z);
-	PX4_INFO("Thrust  %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
+	// PX4_INFO("Thrust  %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
+	// PX4_INFO("Orientation  %f %f %f",(double)math::degrees(att_sp.roll_body),(double)math::degrees(att_sp.pitch_body),(double)math::degrees(att_sp.yaw_body));
 
 }
 
@@ -230,9 +226,11 @@ void thrustToZeroTiltAttitude(const Vector3f &thr_sp, const float yaw_sp, const 
 	att_sp.yaw_body = yaw_sp;
 
 
-	att_sp.thrust_body[0] = thr_sp.dot(body_x);// values tend to be very small
+	att_sp.thrust_body[0] = thr_sp.dot(body_x);
 	att_sp.thrust_body[1] = thr_sp.dot(body_y);
 	att_sp.thrust_body[2] = thr_sp.dot(body_z);
+	// PX4_INFO("Orientation  %f %f %f",(double)math::degrees(att_sp.roll_body),(double)math::degrees(att_sp.pitch_body),(double)math::degrees(att_sp.yaw_body));
+
 
 
 

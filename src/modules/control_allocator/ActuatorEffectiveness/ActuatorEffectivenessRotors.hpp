@@ -106,7 +106,8 @@ public:
 	}
 
 	static int computeEffectivenessMatrix(const Geometry &geometry,
-					      EffectivenessMatrix &effectiveness, int actuator_start_index = 0,bool tiltable_matrix=false,float tilt_angle=0,int att_mode=1);
+					      EffectivenessMatrix &effectiveness, int actuator_start_index = 0,bool tiltable_matrix=false,float tilt_angle=0,int att_mode=1,
+					      float tq_per=0.0, int tilting_index=0);
 
 	bool addActuators(Configuration &configuration,bool tiltable=0);
 
@@ -140,7 +141,7 @@ public:
 	uint32_t getUpwardsMotors() const;
 	uint32_t getForwardsMotors() const;
 	uint32_t _num_tilted_rotors {2}; //total number tilted motors
-	uint32_t tiltable_index {6}; //value from the first tiltable motor
+	int32_t tilting_index {0}; //value from the first tiltable motor
 	thrust_vectoring_attitude_status_s thrust_vec_status;
 
 	uORB::Subscription _thrust_vectoring_status_sub{ORB_ID(thrust_vectoring_attitude_status)};
@@ -171,7 +172,10 @@ private:
 		param_t tilt_index;
 	};
 	ParamHandles _param_handles[NUM_ROTORS_MAX];
+
 	param_t _count_handle;
+	param_t _tilting_index;
+
 	Geometry _geometry{};
 
 

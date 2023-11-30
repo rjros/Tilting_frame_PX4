@@ -167,3 +167,17 @@ PARAM_DEFINE_FLOAT(MPC_PTH_MIN, 0.12f);
  */
 PARAM_DEFINE_FLOAT(MPC_PTH_MAX, 1.0f);
 
+/**
+ * Percentage of torque controlled by the tilting propellers
+ *
+ *Tune according to type of actuator
+ *
+ * @unit norm
+ * @min 0
+ * @max 1
+ * @decimal 2
+ * @increment 0.05
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(TORQUE_DIST, 0.0f);
+
