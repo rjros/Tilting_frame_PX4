@@ -78,7 +78,7 @@ protected:
 	// ActuatorVector _tilt_offsets;
 	ActuatorEffectivenessRotors _mc_rotors_fixed; //< UAV rotors
 
-	ActuatorEffectivenessRotors _mc_rotors_tilted;//< Thrustvectoring device rotors
+	// ActuatorEffectivenessRotors _mc_rotors_tilted;//< Thrustvectoring device rotors
 	ActuatorEffectivenessTilts _tilts;//< Servos attached to actuators
 	// struct YawTiltSaturationFlags {
 	// 	bool tilt_yaw_pos;

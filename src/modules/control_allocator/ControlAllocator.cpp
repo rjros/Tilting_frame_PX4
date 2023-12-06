@@ -471,6 +471,9 @@ ControlAllocator::Run()
 	/*** CUSTOM ***/
 	thrust_vectoring_attitude_status_s thrust_vec_status;
 	matrix::Vector<float, NUM_ACTUATORS> actuator_sp;
+	matrix::Vector<float, NUM_ACTUATORS> fixed_actuator_sp;
+	matrix::Vector<float, NUM_ACTUATORS> tilting_actuator_sp;
+
 	/*** END-CUSTOM ***/
 
 
@@ -642,6 +645,7 @@ ControlAllocator::Run()
 				_actuator_effectiveness->updateSetpoint(c[i], i, _control_allocation[i]->_actuator_sp,
 									_control_allocation[i]->getActuatorMin(), _control_allocation[i]->getActuatorMax());
 
+
 				if (_has_slew_rate) {
 					_control_allocation[i]->applySlewRateLimit(dt);
 				}
@@ -649,23 +653,27 @@ ControlAllocator::Run()
 				_control_allocation[i]->clipActuatorSetpoint();
 				//check if missing commands
 				}
+
+				// PX4_INFO("Actuator sp  control allocation 1" );
+				// _control_allocation[0]->_actuator_sp.print();
+				// PX4_INFO("Actuator sp  control allocation 2" );
+				// _control_allocation[1]->_actuator_sp.print();
+
 		}
 		else {
-
+				// PX4_INFO("Number of allocation %d ",_num_control_allocation);
 				_control_allocation[0]->setControlSetpoint(c[0]);
-				// Do allocation
+				//Do allocation
 				_control_allocation[0]->allocate();
-				actuator_sp = _control_allocation[0]->getActuatorSetpoint();
+				fixed_actuator_sp = _control_allocation[0]->getActuatorSetpoint();
 
+				fixed_actuator_sp(8)=-tilt_angle;
+				fixed_actuator_sp(9)=tilt_angle;
 
-				//Tilts for testing purposes
-				//fix later to consider different geometries
-				// for(int i=8; i<10; i++){
-				// 	actuator_sp(i) = tilt_angle;
-				// }
-				actuator_sp(8)=-tilt_angle;
-				actuator_sp(9)=tilt_angle;
-				_control_allocation[1]->setActuatorSetpoint(servo_sp);
+				_control_allocation[1]->setControlSetpoint(c[1]);
+				//Do allocation
+				_control_allocation[1]->allocate();
+				tilting_actuator_sp= _control_allocation[1]->getActuatorSetpoint();
 
 				matrix::Vector<float, NUM_ACTUATORS> actuatorMax, actuatorMin;
 				matrix::Vector<float, NUM_ACTUATORS> servoMax, servoMin;
@@ -680,17 +688,23 @@ ControlAllocator::Run()
 					actuatorMax(i) =  1.0f;
 					actuatorMin(i) = -1.0f;
 				}
-				_control_allocation[0]->setActuatorMax(actuatorMax);
-				_control_allocation[0]->setActuatorMin(actuatorMin);
 
-				_control_allocation[0]->setActuatorSetpoint(actuator_sp);
+
+				_control_allocation[0]->setActuatorSetpoint(fixed_actuator_sp);
 				_control_allocation[1]->setActuatorSetpoint(servo_sp);
+
+				fixed_actuator_sp.print();
+
+				// _control_allocation[1]->setActuatorSetpoint(tilting_actuator_sp);
+
 
 				_actuator_effectiveness->updateSetpoint(c[0], 0, _control_allocation[0]->_actuator_sp,
 									_control_allocation[0]->getActuatorMin(), _control_allocation[0]->getActuatorMax());
 
 				_actuator_effectiveness->updateSetpoint(c[1], 1, _control_allocation[1]->_actuator_sp,
 									_control_allocation[1]->getActuatorMin(), _control_allocation[1]->getActuatorMax());
+
+
 				if (_has_slew_rate) {
 				_control_allocation[0]->applySlewRateLimit(dt);
 
@@ -698,15 +712,17 @@ ControlAllocator::Run()
 
 				_control_allocation[0]->clipActuatorSetpoint();
 
+				// PX4_INFO("Actuator sp  control allocation 2" );
+				// _control_allocation[1]->_actuator_sp.print();
+				//PX4_INFO("Actuator sp  control allocation 2 %f ",(double) _control_allocation[1]->_actuator_sp.print());
+
 			//Double Matrix approach
 			//where one handles the tilting and the other handles the fixed
 
 
 			// // PX4_INFO( "Multiple allocation %d ", _num_control_allocation);
-
-			// //Vertical forces
-			// _control_allocation[0]->setControlSetpoint(c[0]);
-			// _control_allocation[0]->allocate();
+//
+			// //Vertical forces			// _control_allocation[0]->allocate();
 			// vertical_actuator_sp = _control_allocation[0]->getActuatorSetpoint();
 
 			// //Lateral forces
@@ -714,7 +730,6 @@ ControlAllocator::Run()
 			// _control_allocation[1]->allocate();
 			// lateral_actuator_sp = _control_allocation[1]->getActuatorSetpoint();//_control_allocation[1]->getActuatorSetpoint();
 			// PX4_INFO("v_sp %d : %f ", 0, (double)lateral_actuator_sp(0));
-
 
 		}
 

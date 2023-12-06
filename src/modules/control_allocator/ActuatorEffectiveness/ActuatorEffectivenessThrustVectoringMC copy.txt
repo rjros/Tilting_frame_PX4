@@ -47,7 +47,6 @@ using namespace matrix;
 ActuatorEffectivenessThrustVectoringMC::ActuatorEffectivenessThrustVectoringMC(ModuleParams *parent)
 	: ModuleParams(parent),
 	_mc_rotors_fixed(this, ActuatorEffectivenessRotors::AxisConfiguration::Configurable, true),
-	_mc_rotors_tilted(this, ActuatorEffectivenessRotors::AxisConfiguration::Configurable, true),
 	_tilts(this)
 	{
 		updateParams();
@@ -72,23 +71,23 @@ ActuatorEffectivenessThrustVectoringMC::getEffectivenessMatrix(Configuration &co
 	}
 
 	// //Flags for each matrix [[fixed],[tilted]]
-	_rotors_fixed_added_succesfully=false;
-	 _rotors_tilted_added_succesfully=false;
+	//_rotors_fixed_added_succesfully=false;
+	// _rotors_tilted_added_succesfully=false;
 
 	// Compare with multiple allocation matrices
 	//Fixed Motors Control
 	configuration.selected_matrix=0; //< chooses the matrix to be used
 	//_mc_rotors_fixed.enableYawByDifferentialThrust(false);
-	_rotors_fixed_added_succesfully = _mc_rotors_fixed.addActuators(configuration,false);
+	_rotors_fixed_added_succesfully = _mc_rotors_fixed.addActuators(configuration,true);
 	// PX4_INFO("Configuration Num actuators fixed  is %d ",*configuration.num_actuators);
 
 
 	// //Tiltable rotors control
-	configuration.selected_matrix=1;//< thrust vectoring motors
-	_rotors_tilted_added_succesfully=_mc_rotors_tilted.addActuators(configuration,true);
+	// configuration.selected_matrix=1;//< thrust vectoring motors
+	// _rotors_tilted_added_succesfully=_mc_rotors_tilted.addActuators(configuration,true);
 	// // PX4_INFO("Configuration Num actuators tilted is %d ",*configuration.num_actuators);
 
-	*configuration.num_actuators/=2;
+	// *configuration.num_actuators/=2;
 
 
 	// PX4_INFO("Configuration Num actuators is %d ",*configuration.num_actuators);

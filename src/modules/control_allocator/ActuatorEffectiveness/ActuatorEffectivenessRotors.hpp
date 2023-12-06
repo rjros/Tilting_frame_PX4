@@ -81,6 +81,8 @@ public:
 		bool yaw_by_differential_thrust_disabled{false};
 		bool propeller_torque_disabled_non_upwards{false}; ///< keeps propeller torque enabled for upward facing motors
 		bool three_dimensional_thrust_disabled{false}; ///< for handling of tiltrotor VTOL, as they pass in 1D thrust and collective tilt
+		//CUSTOM
+		int tilting_index{0};// use for defining the value where the tilting rotors are located
 	};
 
 	ActuatorEffectivenessRotors(ModuleParams *parent, AxisConfiguration axis_config = AxisConfiguration::Configurable,
@@ -107,7 +109,7 @@ public:
 
 	static int computeEffectivenessMatrix(const Geometry &geometry,
 					      EffectivenessMatrix &effectiveness, int actuator_start_index = 0,bool tiltable_matrix=false,float tilt_angle=0,int att_mode=1,
-					      float tq_per=0.0, int tilting_index=0);
+					      float tq_per=0.0);
 
 	bool addActuators(Configuration &configuration,bool tiltable=0);
 
@@ -141,7 +143,7 @@ public:
 	uint32_t getUpwardsMotors() const;
 	uint32_t getForwardsMotors() const;
 	uint32_t _num_tilted_rotors {2}; //total number tilted motors
-	int32_t tilting_index {0}; //value from the first tiltable motor
+	int tilting_index {0}; //value from the first tiltable motor
 	thrust_vectoring_attitude_status_s thrust_vec_status;
 
 	uORB::Subscription _thrust_vectoring_status_sub{ORB_ID(thrust_vectoring_attitude_status)};
