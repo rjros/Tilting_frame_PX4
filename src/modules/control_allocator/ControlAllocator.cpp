@@ -665,7 +665,7 @@ ControlAllocator::Run()
 				// }
 				actuator_sp(8)=-tilt_angle;
 				actuator_sp(9)=tilt_angle;
-				_control_allocation[1]->setActuatorSetpoint(servo_sp);
+				// _control_allocation[1]->setActuatorSetpoint(servo_sp);
 
 				matrix::Vector<float, NUM_ACTUATORS> actuatorMax, actuatorMin;
 				matrix::Vector<float, NUM_ACTUATORS> servoMax, servoMin;
@@ -680,17 +680,19 @@ ControlAllocator::Run()
 					actuatorMax(i) =  1.0f;
 					actuatorMin(i) = -1.0f;
 				}
+
+				actuator_sp.print();
 				_control_allocation[0]->setActuatorMax(actuatorMax);
 				_control_allocation[0]->setActuatorMin(actuatorMin);
 
 				_control_allocation[0]->setActuatorSetpoint(actuator_sp);
-				_control_allocation[1]->setActuatorSetpoint(servo_sp);
+				// _control_allocation[1]->setActuatorSetpoint(servo_sp);
 
 				_actuator_effectiveness->updateSetpoint(c[0], 0, _control_allocation[0]->_actuator_sp,
 									_control_allocation[0]->getActuatorMin(), _control_allocation[0]->getActuatorMax());
 
-				_actuator_effectiveness->updateSetpoint(c[1], 1, _control_allocation[1]->_actuator_sp,
-									_control_allocation[1]->getActuatorMin(), _control_allocation[1]->getActuatorMax());
+				// _actuator_effectiveness->updateSetpoint(c[1], 1, _control_allocation[1]->_actuator_sp,
+				// 					_control_allocation[1]->getActuatorMin(), _control_allocation[1]->getActuatorMax());
 				if (_has_slew_rate) {
 				_control_allocation[0]->applySlewRateLimit(dt);
 
