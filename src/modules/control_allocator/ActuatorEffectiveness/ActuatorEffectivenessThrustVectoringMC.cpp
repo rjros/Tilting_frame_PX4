@@ -88,13 +88,12 @@ ActuatorEffectivenessThrustVectoringMC::getEffectivenessMatrix(Configuration &co
 	_rotors_tilted_added_succesfully=_mc_rotors_tilted.addActuators(configuration,true);
 	// // PX4_INFO("Configuration Num actuators tilted is %d ",*configuration.num_actuators);
 
-	*configuration.num_actuators/=2;
 
 
 	// PX4_INFO("Configuration Num actuators is %d ",*configuration.num_actuators);
 
 	//Tilts, servos
-	configuration.selected_matrix=0;
+	configuration.selected_matrix=1;
 	_first_tilt_idx = configuration.num_actuators_matrix[configuration.selected_matrix];
 	// _tilts.updateTorqueSign(_mc_rotors_fixed.geometry());
 	_tilts_added_succesfully = _tilts.addActuators(configuration);
@@ -108,6 +107,8 @@ void ActuatorEffectivenessThrustVectoringMC::updateSetpoint(const matrix::Vector
 		int matrix_index, ActuatorVector &actuator_sp, const matrix::Vector<float, NUM_ACTUATORS> &actuator_min,
 		const matrix::Vector<float, NUM_ACTUATORS> &actuator_max)
 {
+
+
 	//matrix with the tiltable actuators
 	if (matrix_index == 1){
 		for(int i=0; i<_tilts.count(); i++){

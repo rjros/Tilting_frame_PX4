@@ -612,6 +612,20 @@ ControlAllocator::Run()
 
 		//In the px4_tilting the control allocator checks the source first
 		//if (source!=EffectivenessSource::Thrust_Vectoring_Mode)
+		// if (_num_control_allocation > 1) {
+		// 	if (_vehicle_torque_setpoint1_sub.copy(&vehicle_torque_setpoint)) {
+		// 		c[1](0) = vehicle_torque_setpoint.xyz[0];
+		// 		c[1](1) = vehicle_torque_setpoint.xyz[1];
+		// 		c[1](2) = vehicle_torque_setpoint.xyz[2];
+		// 	}
+
+		// 	if (_vehicle_thrust_setpoint1_sub.copy(&vehicle_thrust_setpoint)) {
+		// 		c[1](3) = vehicle_thrust_setpoint.xyz[0];
+		// 		c[1](4) = vehicle_thrust_setpoint.xyz[1];
+		// 		c[1](5) = vehicle_thrust_setpoint.xyz[2];
+		// 	}
+		// }
+
 		if (_num_control_allocation > 1) {
 			if (_vehicle_torque_setpoint1_sub.copy(&vehicle_torque_setpoint)) {
 				c[1](0) = vehicle_torque_setpoint.xyz[0];
@@ -661,49 +675,36 @@ ControlAllocator::Run()
 
 		}
 		else {
-				// PX4_INFO("Number of allocation %d ",_num_control_allocation);
-				_control_allocation[0]->setControlSetpoint(c[0]);
+
+				//setpoint for the second allocation matrix
+				c[1]=c[0];
+
 				//Do allocation
+				_control_allocation[0]->setControlSetpoint(c[0]);
 				_control_allocation[0]->allocate();
+				//Gets the setpoint in the actuator vector
 				fixed_actuator_sp = _control_allocation[0]->getActuatorSetpoint();
 
-				fixed_actuator_sp(8)=-tilt_angle;
-				fixed_actuator_sp(9)=tilt_angle;
-
+				//PUT CONDITION TO REVERSE IF NEEDED
+				//TILTED ACTUATORS
 				_control_allocation[1]->setControlSetpoint(c[1]);
-				//Do allocation
 				_control_allocation[1]->allocate();
-				tilting_actuator_sp= _control_allocation[1]->getActuatorSetpoint();
-
-				matrix::Vector<float, NUM_ACTUATORS> actuatorMax, actuatorMin;
-				matrix::Vector<float, NUM_ACTUATORS> servoMax, servoMin;
-
-				for(int i=0; i<_num_actuators[0]; i++){
-					actuatorMax(i) = 1.0f;
-					actuatorMin(i) = 0.00f;
-				}
-
-				for(int i=_num_actuators[0]; i<(_num_actuators[0]+_num_actuators[1]); i++){
-					// PX4_INFO("Actuator servo %d", i);
-					actuatorMax(i) =  1.0f;
-					actuatorMin(i) = -1.0f;
-				}
-
+				tilting_actuator_sp = _control_allocation[1]->getActuatorSetpoint();
+				//Tilt propellers INDEX to be added
+				// For now assume the servos begin after the tilted motors
+				//Total num of motors-tilted index = num of tilting motors
+				tilting_actuator_sp(2)=-tilt_angle;
+				tilting_actuator_sp(3)=tilt_angle;
 
 				_control_allocation[0]->setActuatorSetpoint(fixed_actuator_sp);
-				_control_allocation[1]->setActuatorSetpoint(servo_sp);
-
-				fixed_actuator_sp.print();
-
-				// _control_allocation[1]->setActuatorSetpoint(tilting_actuator_sp);
+				_control_allocation[1]->setActuatorSetpoint(tilting_actuator_sp);
 
 
 				_actuator_effectiveness->updateSetpoint(c[0], 0, _control_allocation[0]->_actuator_sp,
 									_control_allocation[0]->getActuatorMin(), _control_allocation[0]->getActuatorMax());
 
-				_actuator_effectiveness->updateSetpoint(c[1], 1, _control_allocation[1]->_actuator_sp,
+				_actuator_effectiveness->updateSetpoint(c[1], 0, _control_allocation[1]->_actuator_sp,
 									_control_allocation[1]->getActuatorMin(), _control_allocation[1]->getActuatorMax());
-
 
 				if (_has_slew_rate) {
 				_control_allocation[0]->applySlewRateLimit(dt);
@@ -711,25 +712,12 @@ ControlAllocator::Run()
 				}
 
 				_control_allocation[0]->clipActuatorSetpoint();
+				_control_allocation[1]->clipActuatorSetpoint();
 
-				// PX4_INFO("Actuator sp  control allocation 2" );
-				// _control_allocation[1]->_actuator_sp.print();
+				tilting_actuator_sp.print();
+				//_control_allocation[1]->_actuator_sp.print();
+
 				//PX4_INFO("Actuator sp  control allocation 2 %f ",(double) _control_allocation[1]->_actuator_sp.print());
-
-			//Double Matrix approach
-			//where one handles the tilting and the other handles the fixed
-
-
-			// // PX4_INFO( "Multiple allocation %d ", _num_control_allocation);
-//
-			// //Vertical forces			// _control_allocation[0]->allocate();
-			// vertical_actuator_sp = _control_allocation[0]->getActuatorSetpoint();
-
-			// //Lateral forces
-			// _control_allocation[1]->setControlSetpoint(c[0]);
-			// _control_allocation[1]->allocate();
-			// lateral_actuator_sp = _control_allocation[1]->getActuatorSetpoint();//_control_allocation[1]->getActuatorSetpoint();
-			// PX4_INFO("v_sp %d : %f ", 0, (double)lateral_actuator_sp(0));
 
 		}
 
