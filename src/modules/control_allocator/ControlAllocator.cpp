@@ -676,8 +676,15 @@ ControlAllocator::Run()
 		}
 		else {
 
-				//setpoint for the second allocation matrix
-				c[1]=c[0];
+				//TORQUE SETPOiNT XYZ
+				c[1](0) = 0.0f;//_torque_sp(0);
+				c[1](1) = 0.0f;//_torque_sp(1);
+				c[1](2) = 0.0f;//_torque_sp(2);
+				//THRUST SETPOINTS XYZ
+				c[1](3) =_thrust_sp(0);
+				c[1](4) =_thrust_sp(1);//vehicle_thrust_setpoint.xyz[1];
+				c[1](5) = 0.0f;//_thrust_sp(2);vehicle_thrust_setpoint.xyz[2];
+
 
 				//Do allocation
 				_control_allocation[0]->setControlSetpoint(c[0]);
@@ -714,7 +721,7 @@ ControlAllocator::Run()
 				_control_allocation[0]->clipActuatorSetpoint();
 				_control_allocation[1]->clipActuatorSetpoint();
 
-				tilting_actuator_sp.print();
+				//tilting_actuator_sp.print();
 				//_control_allocation[1]->_actuator_sp.print();
 
 				//PX4_INFO("Actuator sp  control allocation 2 %f ",(double) _control_allocation[1]->_actuator_sp.print());
