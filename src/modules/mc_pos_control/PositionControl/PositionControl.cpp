@@ -137,7 +137,7 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode)
 	if (valid) {
 
 	if (vectoring_att_mode > 6 || vectoring_att_mode< 0) {
-		PX4_ERR("Vectoring Mode parameter set to unknown value!");
+		// PX4_ERR("Vectoring Mode parameter set to unknown value!");
 	}
 
 	//check value for the switch
@@ -231,7 +231,7 @@ void PositionControl::_planar_positionControl(const float dt, const float yaw_sp
 	_vel_sp.xy()=vel_sp_xy.xy();
 
 	// PX4_INFO("Pos_error %f %f %f",(double)pos_error(0),(double)pos_error(1),(double)pos_error(2));
-	PX4_INFO("Vel setpoint differences %f %f ",(double)_vel_sp(0),(double)_pos_int(0));
+	// PX4_INFO("Vel setpoint differences %f %f ",(double)_vel_sp(0),(double)_pos_int(0));
 
 
 
@@ -326,7 +326,7 @@ void PositionControl::_planar_velocityControl(const float dt,const float yaw_sp)
 	thr_sp_xy(0)=thr_sp_xy(0)>=0.0f? math::min(thr_sp_xy(0),_lim_planar_thr_max): math::max(thr_sp_xy(0),-_lim_planar_thr_max);
 	thr_sp_xy(1)=thr_sp_xy(1)>=0.0f? math::min(thr_sp_xy(1),_lim_planar_thr_max): math::max(thr_sp_xy(1),-_lim_planar_thr_max);
 
-	PX4_INFO("Th %f %f %f",(double)thr_sp_xy(0),(double)thr_sp_xy(1),(double)_thr_sp(2));
+	// PX4_INFO("Th %f %f %f",(double)thr_sp_xy(0),(double)thr_sp_xy(1),(double)_thr_sp(2));
 
 	thr_sp_xy=_rotation2*Vector3f{thr_sp_xy(0),thr_sp_xy(1),0};
 	vel_xy_error=_rotation2*Vector3f{vel_xy_error(0),vel_xy_error(1),0};
@@ -343,7 +343,7 @@ void PositionControl::_planar_velocityControl(const float dt,const float yaw_sp)
 
 	// limit thrust integral
 	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
-	PX4_INFO("Ve %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
+	// PX4_INFO("Ve %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
 
 
 
@@ -435,8 +435,8 @@ void PositionControl::_velocityControl(const float dt)
 
 	// limit thrust integral
 	_vel_int(2) = math::min(fabsf(_vel_int(2)), CONSTANTS_ONE_G) * sign(_vel_int(2));
-	PX4_INFO("Th %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
-	PX4_INFO("Vel %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
+	// PX4_INFO("Th %f %f %f",(double)_thr_sp(0),(double)_thr_sp(1),(double)_thr_sp(2));
+	// PX4_INFO("Vel %f %f %f",(double)_vel_sp(0),(double)_vel_sp(1),(double)_vel_sp(2));
 
 
 

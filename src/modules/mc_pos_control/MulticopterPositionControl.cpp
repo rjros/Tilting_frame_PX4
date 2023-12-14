@@ -640,12 +640,12 @@ void MulticopterPositionControl::Run()
 
 			}
 			// // param_t vectoring_param = param_handle(px4::params::VECT_ATT_MODE);
-			// param_t angle_param =param_handle(px4::params::MAN_ATT_DIR);
-			// manual_control_switches_sub.update(&switches);
-			// int32_t att_mode= switches.vectoring_switch;
-			// int32_t orientation =switches.orientation_switch;
-			// param_set(vectoring_param,&att_mode);
-			// param_set(angle_param,&orientation);
+			param_t angle_param =param_handle(px4::params::MAN_ATT_DIR);
+			manual_control_switches_sub.update(&switches);
+			int32_t att_mode= switches.vectoring_switch;
+			int32_t orientation =switches.orientation_switch;
+			param_set(vectoring_param,&att_mode);
+			param_set(angle_param,&orientation);
 
 			///////////////////////////////////////////////////////////
 			//Add condition for selecting between rc or saved condition

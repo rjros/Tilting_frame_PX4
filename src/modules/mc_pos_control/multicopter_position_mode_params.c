@@ -58,7 +58,7 @@ PARAM_DEFINE_INT32(MPC_POS_MODE, 4);
  * using MPC_VEL_MAN_SIDE and MPC_VEL_MAN_BACK, respectively.
  *
  * @unit m/s
- * @min 3
+ * @min 2
  * @max 20
  * @increment 1
  * @decimal 1

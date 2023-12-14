@@ -37,7 +37,7 @@
  * e.g. in Missions, RTL, Goto if the waypoint does not specify differently
  *
  * @unit m/s
- * @min 3
+ * @min 1
  * @max 20
  * @decimal 0
  * @increment 1
