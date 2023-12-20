@@ -73,10 +73,11 @@ param set-default PWM_MAIN_FUNC10 202
 
 
 # Limits for tilting angles
-param set-default CA_SV_TL0_MAXA 90
-param set-default CA_SV_TL0_MINA -90
-param set-default CA_SV_TL1_MAXA 90
-param set-default CA_SV_TL1_MINA -90
+param set-default CA_SV_TL0_MAXA 135
+param set-default CA_SV_TL0_MINA -135
+param set-default CA_SV_TL1_MAXA 135
+param set-default CA_SV_TL1_MINA -135
+param set-default CA_INDEX 6
 
 
 #disable MC desaturation which improves attitude tracking
@@ -87,7 +88,7 @@ param set-default FD_FAIL_P 0
 param set-default FD_FAIL_R 0
 
 #Set omni parameters
-param set VECT_ATT_MODE 1
+param set VECT_ATT_MODE 3
 
 set MIXER skip
 set MIXER_AUX none

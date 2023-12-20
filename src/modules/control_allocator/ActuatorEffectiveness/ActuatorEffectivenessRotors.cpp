@@ -93,6 +93,7 @@ void ActuatorEffectivenessRotors::updateParams()
 
 
 	int32_t count = 0;
+	int32_t tilting_index=0;
 
 	//int tilting_index=0;
 

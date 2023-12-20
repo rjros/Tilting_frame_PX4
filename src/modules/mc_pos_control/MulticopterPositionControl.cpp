@@ -656,6 +656,10 @@ void MulticopterPositionControl::Run()
 
 
 			//Angles for the tilting
+			//offset for the sim
+			// vectoring_status.forward_angle=math::radians(_param_forward_angle.get()-90.0f);
+			// vectoring_status.backward_angle=math::radians(_param_backward_angle.get()-90.0f);
+
 			vectoring_status.forward_angle=math::radians(_param_forward_angle.get());
 			vectoring_status.backward_angle=math::radians(_param_backward_angle.get());
 

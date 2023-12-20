@@ -71,7 +71,7 @@ public:
 		matrix::Vector3f axis;
 		float thrust_coef;
 		float moment_ratio;
-		int tilt_index;
+		int32_t tilt_index;
 	};
 
 	struct Geometry {
@@ -140,7 +140,7 @@ public:
 	uint32_t getUpwardsMotors() const;
 	uint32_t getForwardsMotors() const;
 	uint32_t _num_tilted_rotors {2}; //total number tilted motors
-	uint32_t tiltable_index {6}; //value from the first tiltable motor
+	// int tilting_index {0}; //value from the first tiltable motor
 	thrust_vectoring_attitude_status_s thrust_vec_status;
 
 	uORB::Subscription _thrust_vectoring_status_sub{ORB_ID(thrust_vectoring_attitude_status)};

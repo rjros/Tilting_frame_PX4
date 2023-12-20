@@ -74,8 +74,8 @@ PARAM_DEFINE_INT32(MAN_ATT_DIR, 0);
  * To avoid completely starving horizontal control with high vertical error.
  *
  * @unit deg
- * @min -90
- * @max 90
+ * @min-135
+ * @max 135
  * @decimal 1
  * @increment 1
  */
@@ -88,8 +88,8 @@ PARAM_DEFINE_FLOAT(FW_ANGLE, 0);
  * To avoid completely starving horizontal control with high vertical error.
  *
  * @unit deg
- * @min -90
- * @max 90
+ * @min -135
+ * @max 135
  * @decimal 1
  * @increment 1
  */
