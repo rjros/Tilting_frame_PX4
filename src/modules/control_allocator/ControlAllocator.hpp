@@ -83,6 +83,7 @@
 #include <uORB/topics/failure_detector_status.h>
 //CUSTOM
 #include <uORB/topics/thrust_vectoring_attitude_status.h>
+#include <uORB/topics/key_command.h>
 
 //CUSTOM
 
@@ -234,6 +235,8 @@ private:
 	//Test
 
 	uORB::Subscription _thrust_vectoring_status_sub{ORB_ID(thrust_vectoring_attitude_status)};
+	uORB::Subscription _key_command_sub{ORB_ID(key_command)};
+
 	int16_t prev_orientation{0};
 	//Test
 

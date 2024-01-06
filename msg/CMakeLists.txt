@@ -115,6 +115,9 @@ set(msg_files
 	InternalCombustionEngineStatus.msg
 	IridiumsbdStatus.msg
 	IrlockReport.msg
+	## CUSTOM MAVROS##
+	KeyCommand.msg
+	## CUSTOM MAVROS##
 	LandingGear.msg
 	LandingGearWheel.msg
 	LandingTargetInnovations.msg
@@ -186,7 +189,10 @@ set(msg_files
 	TaskStackInfo.msg
 	TecsStatus.msg
 	TelemetryStatus.msg
+	## CUSTOM MAVROS##
 	ThrustVectoringAttitudeStatus.msg
+	ThrustVectoringSetpoint.msg
+	## CUSTOM MAVROS##
 	TiltrotorExtraControls.msg
 	TimesyncStatus.msg
 	TrajectoryBezier.msg
