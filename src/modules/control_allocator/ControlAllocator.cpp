@@ -473,6 +473,7 @@ ControlAllocator::Run()
 
 	/*** CUSTOM ***/
 	thrust_vectoring_attitude_status_s thrust_vec_status;
+	thrust_vectoring_setpoint_s thrust_vec_setpoint;
 	//key_command_s key_command_status;
 	matrix::Vector<float, NUM_ACTUATORS> actuator_sp;
 	/*** END-CUSTOM ***/
@@ -514,21 +515,18 @@ ControlAllocator::Run()
 		//print once to check wether the flag has change or not
 
 		_thrust_vectoring_status_sub.copy(&thrust_vec_status);
-		//int test{0};
-		// int instances=0;
-		//test=orb_exists(ORB_ID(key_command),1);
+		_thrust_vectoring_setpoint_sub.copy(&thrust_vec_setpoint);
 
-		//_key_command_sub.copy(&key_command_status);
+		int instances=0;
 
-		//2 conditions, mode and the mavros topic must be present
 
-		// for (int i = 0; i < 10; i++) {
-		// 	if (orb_exists(ORB_ID(key_command), i) == PX4_OK) {
-		// 	instances++;
-		// }
-		// }
+		for (int i = 0; i < 10; i++) {
+			if (orb_exists(ORB_ID(thrust_vectoring_setpoint), i) == PX4_OK) {
+			instances++;
+		}
+		}
 
-		//Random value is being se		// PX4_INFO("Current mavros value %d ",instances);
+		PX4_INFO("Current mavros value %d ",instances);
 
 		if(thrust_vec_status.manual_orientation!=prev_orientation){
 
