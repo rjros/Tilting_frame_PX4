@@ -474,6 +474,9 @@ ControlAllocator::Run()
 	matrix::Vector<float, NUM_ACTUATORS> fixed_actuator_sp;
 	matrix::Vector<float, NUM_ACTUATORS> tilting_actuator_sp;
 
+	thrust_vectoring_setpoint_s thrust_vec_setpoint;
+
+
 	/*** END-CUSTOM ***/
 
 
@@ -513,6 +516,17 @@ ControlAllocator::Run()
 		//print once to check wether the flag has change or not
 
 		_thrust_vectoring_status_sub.copy(&thrust_vec_status);
+		_thrust_vectoring_setpoint_sub.copy(&thrust_vec_setpoint);
+		// int instances=0;
+
+		// for (int i = 0; i < 10; i++) {
+		// 	if (orb_exists(ORB_ID(thrust_vectoring_setpoint), i) == PX4_OK) {
+		// 		instances++;
+		// }
+		// }
+
+
+
 
 		if(thrust_vec_status.manual_orientation!=prev_orientation){
 
@@ -595,8 +609,8 @@ ControlAllocator::Run()
 		c[0](0) = _torque_sp(0);
 		c[0](1) = _torque_sp(1);
 		c[0](2) = _torque_sp(2);
-		c[0](3) = _thrust_sp(0);
-		c[0](4) = _thrust_sp(1);
+		c[0](3) = thrust_vec_setpoint.force[0];//_thrust_sp(0);
+		c[0](4) = thrust_vec_setpoint.force[1];//_thrust_sp(1);
 		c[0](5) = _thrust_sp(2);
 
 		/*** CUSTOM ***/
@@ -681,8 +695,8 @@ ControlAllocator::Run()
 				c[1](1) = 0.0f;//_torque_sp(1);
 				c[1](2) = 0.0f;//_torque_sp(2);
 				//THRUST SETPOINTS XYZ
-				c[1](3) =_thrust_sp(0);
-				c[1](4) =_thrust_sp(1);//vehicle_thrust_setpoint.xyz[1];
+				c[1](3) =thrust_vec_setpoint.force[0]; //_thrust_sp(0);
+				c[1](4) =thrust_vec_setpoint.force[1]; //_thrust_sp(1);//vehicle_thrust_setpoint.xyz[1];
 				c[1](5) = 0.0f;//_thrust_sp(2);vehicle_thrust_setpoint.xyz[2];
 
 
