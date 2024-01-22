@@ -190,7 +190,7 @@ public:
 	 * @param dt time in seconds since last iteration
 	 * @return true if update succeeded and output setpoint is executable, false if not
 	 */
-	bool update(const float dt,const int att_mode);
+	bool update(const float dt,const int att_mode,bool planar_flight);
 
 	/**
 	 * Set the integral term in xy to 0.
@@ -224,7 +224,7 @@ public:
 	 * @param thrust_vectoring_status thrust vectoring status
 	 */
 	void getAttitudeSetpoint(const matrix::Quatf &att, const int vectoring_att_mode, vehicle_attitude_setpoint_s &attitude_setpoint,
-					thrust_vectoring_attitude_status_s &thrust_vectoring_status) const;
+					thrust_vectoring_attitude_status_s &thrust_vectoring_status,bool planar_flight) const;
 
 
 

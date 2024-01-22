@@ -69,6 +69,7 @@
 #include <uORB/topics/thrust_vectoring_attitude_status.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/manual_control_setpoint.h>
 //read values from switches
 #include <uORB/topics/manual_control_switches.h>
 
@@ -118,10 +119,22 @@ private:
 	uORB::Subscription _vehicle_constraints_sub{ORB_ID(vehicle_constraints)};
 	uORB::Subscription _vehicle_control_mode_sub{ORB_ID(vehicle_control_mode)};
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};
+	// ### CUSTOM ###
 	//read values from the att mode
 	uORB::Subscription manual_control_switches_sub{ORB_ID(manual_control_switches)};
+	uORB::Subscription manual_control_set_sub{ORB_ID(manual_control_setpoint)};
+
+	manual_control_setpoint_s stick_setpoints{};
+
+	float stick_roll{0};
+	float stick_pitch{0};
+	bool planar_flight =false;
+
+
 	manual_control_switches_s switches{};
 
+
+	// ### CUSTOM ###
 	hrt_abstime _time_stamp_last_loop{0};		/**< time stamp of last loop iteration */
 	hrt_abstime _time_position_control_enabled{0};
 

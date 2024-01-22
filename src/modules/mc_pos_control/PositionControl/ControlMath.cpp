@@ -53,24 +53,31 @@ namespace ControlMath
 // }
 
 void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att, const int vectoring_att_mode,
-		      vehicle_attitude_setpoint_s &att_sp, thrust_vectoring_attitude_status_s &thrust_vectoring_status)
+		      vehicle_attitude_setpoint_s &att_sp, thrust_vectoring_attitude_status_s &thrust_vectoring_status,bool planar_flight)
 {
 	// Print an error if the omni_att_mode parameter is out of range
-	if (vectoring_att_mode > 6 || vectoring_att_mode < 0) {
-		// PX4_ERR("OMNI_ATT_MODE parameter set to unknown value!");
+	// if (vectoring_att_mode > 6 || vectoring_att_mode < 0) {
+	// 	// PX4_ERR("OMNI_ATT_MODE parameter set to unknown value!");
+	// }
+	// //check value for the switch
+	// switch (vectoring_att_mode) {
+	// case 3:
+	// 	// PX4_INFO("Before Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
+	// 	bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
+	// 	att_sp.thrust_body[2] = -thr_sp.length();
+	// 	// PX4_INFO("After Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
+	// 	break;
+
+	// default: //Altitude is calculated from the desired thrust direction
+	// 	// PX4_INFO("Before  Zero Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
+	// 	thrustToZeroTiltAttitude(thr_sp, yaw_sp, att,att_sp);
+	// }
+	if (planar_flight){
+		thrustToZeroTiltAttitude(thr_sp, yaw_sp, att,att_sp);
 	}
-	//check value for the switch
-	switch (vectoring_att_mode) {
-	case 3:
-		// PX4_INFO("Before Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
+	else {
 		bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
 		att_sp.thrust_body[2] = -thr_sp.length();
-		// PX4_INFO("After Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
-		break;
-
-	default: //Altitude is calculated from the desired thrust direction
-		// PX4_INFO("Before  Zero Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
-		thrustToZeroTiltAttitude(thr_sp, yaw_sp, att,att_sp);
 	}
 
 	// Estimate the optimal tilt angle and direction to counteract the wind

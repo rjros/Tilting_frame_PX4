@@ -588,15 +588,30 @@ void MulticopterPositionControl::Run()
 			//Control Gains fot the planar control
 
 			// Run position control
-			if (!_control.update(dt,_param_vectoring_att_mode.get())) {
+			if (!_control.update(dt,_param_vectoring_att_mode.get(),planar_flight)) {
 				// Failsafe
 				_vehicle_constraints = {0, NAN, NAN, false, {}}; // reset constraints
 
 				_control.setInputSetpoint(generateFailsafeSetpoint(vehicle_local_position.timestamp_sample, states, true));
 				_control.setVelocityLimits(_param_mpc_xy_vel_max.get(), _param_mpc_z_vel_max_up.get(), _param_mpc_z_vel_max_dn.get());
-				_control.update(dt,_param_vectoring_att_mode.get());
+				_control.update(dt,_param_vectoring_att_mode.get(),planar_flight);
 
 			}
+
+
+			//Check the values of the stick to allow for mode switching tilted stop, and planar motion
+			manual_control_set_sub.copy(&stick_setpoints);
+
+			//check the values of the stick are larger than threshold
+			stick_roll=abs(stick_setpoints.roll);
+			stick_pitch=abs(stick_setpoints.pitch);
+			planar_flight=(stick_roll>=0.10f || stick_pitch>=0.10f)?true:false;
+
+			// PX4_INFO("Stick value %s", planar_flight ? "true" : "false");
+			// PX4_INFO("Stick roll %f and pitch %f", double(stick_roll),double(stick_pitch));
+
+			//Check the values of the stick to allow for mode switching tilted stop, and planar motion
+
 
 			// Publish internal position control setpoints
 			// on top of the input/feed-forward setpoints these containt the PID corrections
@@ -619,7 +634,7 @@ void MulticopterPositionControl::Run()
 			vectoring_status.timestamp = _time_stamp_last_loop;
 			//Get the the attitude setpoint with the omni parameters
 			_control.getAttitudeSetpoint(matrix::Quatf(att.q), _param_vectoring_att_mode.get(),
-							attitude_setpoint, vectoring_status);
+							attitude_setpoint, vectoring_status,planar_flight);
 
 			///////////////////////////////////////////////////////////
 			//Add condition for selecting between rc or saved condition
@@ -640,12 +655,12 @@ void MulticopterPositionControl::Run()
 
 			}
 			// // param_t vectoring_param = param_handle(px4::params::VECT_ATT_MODE);
-			param_t angle_param =param_handle(px4::params::MAN_ATT_DIR);
-			manual_control_switches_sub.update(&switches);
-			int32_t att_mode= switches.vectoring_switch;
-			int32_t orientation =switches.orientation_switch;
-			param_set(vectoring_param,&att_mode);
-			param_set(angle_param,&orientation);
+			// param_t angle_param =param_handle(px4::params::MAN_ATT_DIR);
+			// manual_control_switches_sub.update(&switches);
+			// int32_t att_mode= switches.vectoring_switch;
+			// int32_t orientation =switches.orientation_switch;
+			// param_set(vectoring_param,&att_mode);
+			// param_set(angle_param,&orientation);
 
 			///////////////////////////////////////////////////////////
 			//Add condition for selecting between rc or saved condition

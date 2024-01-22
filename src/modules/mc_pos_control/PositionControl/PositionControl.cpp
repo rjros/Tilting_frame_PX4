@@ -130,7 +130,7 @@ void PositionControl::setInputSetpoint(const trajectory_setpoint_s &setpoint)
 	_yawspeed_sp = setpoint.yawspeed;
 }
 
-bool PositionControl::update(const float dt, const int vectoring_att_mode)
+bool PositionControl::update(const float dt, const int vectoring_att_mode,bool planar_flight)
 {
 	bool valid = _inputValid();
 
@@ -140,20 +140,37 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode)
 		// PX4_ERR("Vectoring Mode parameter set to unknown value!");
 	}
 
+	_yawspeed_sp = PX4_ISFINITE(_yawspeed_sp) ? _yawspeed_sp : 0.f;//yaw control can be separated based on 2 matrices
+	_yaw_sp = PX4_ISFINITE(_yaw_sp) ? _yaw_sp : _yaw; // TODO: better way to disable yaw control
 	//check value for the switch
 	switch (vectoring_att_mode) {
-	case 3:	{
-		_positionControl();
-		_velocityControl(dt);
-		_yawspeed_sp = PX4_ISFINITE(_yawspeed_sp) ? _yawspeed_sp : 0.f;
-		_yaw_sp = PX4_ISFINITE(_yaw_sp) ? _yaw_sp : _yaw; // TODO: better way to disable yaw control
-		}break;//here
-	default:
-		_yawspeed_sp = PX4_ISFINITE(_yawspeed_sp) ? _yawspeed_sp : 0.f;//yaw control can be separated based on 2 matrices
-		_yaw_sp = PX4_ISFINITE(_yaw_sp) ? _yaw_sp : _yaw; // TODO: better way to disable yaw control
+	case 2: {
+		if (planar_flight){
 		_planar_positionControl(dt,_yaw_sp);
 		_planar_velocityControl(dt,_yaw_sp);
+		}
+		else {
+		_positionControl();
+		_velocityControl(dt);
+		}
+		break;
+		}
 
+	case 3:
+		_positionControl();
+		_velocityControl(dt);
+		break;//here
+	default:
+		if (planar_flight){
+		_planar_positionControl(dt,_yaw_sp);
+		_planar_velocityControl(dt,_yaw_sp);
+		PX4_INFO("PLANAR");
+		}
+		else {
+		_positionControl();
+		_velocityControl(dt);
+		PX4_INFO("Tilted");
+		}
 		}
 	}
 
@@ -512,9 +529,10 @@ void PositionControl::getLocalPositionSetpoint(vehicle_local_position_setpoint_s
 // }
 
 void PositionControl::getAttitudeSetpoint(const matrix::Quatf &att, const int vectoring_att_mode,
-					vehicle_attitude_setpoint_s &attitude_setpoint, thrust_vectoring_attitude_status_s &thrust_vectoring_status)
+					vehicle_attitude_setpoint_s &attitude_setpoint, thrust_vectoring_attitude_status_s &thrust_vectoring_status,
+					bool planar_flight)
 					const
 {
-	ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, att, vectoring_att_mode,attitude_setpoint, thrust_vectoring_status);
+	ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, att, vectoring_att_mode,attitude_setpoint, thrust_vectoring_status,planar_flight);
 	attitude_setpoint.yaw_sp_move_rate = _yawspeed_sp;
 }
