@@ -126,8 +126,10 @@ private:
 
 	manual_control_setpoint_s stick_setpoints{};
 
+	//Stick values from the controller
 	float stick_roll{0};
 	float stick_pitch{0};
+	//Values from setpoints
 	bool planar_flight =false;
 
 

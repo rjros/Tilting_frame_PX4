@@ -136,22 +136,35 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode,bool p
 
 	if (valid) {
 
-	if (vectoring_att_mode > 6 || vectoring_att_mode< 0) {
-		// PX4_ERR("Vectoring Mode parameter set to unknown value!");
-	}
+	// if (vectoring_att_mode > 6 || vectoring_att_mode< 0) {
+	// 	// PX4_ERR("Vectoring Mode parameter set to unknown value!");
+	// }
 
 	_yawspeed_sp = PX4_ISFINITE(_yawspeed_sp) ? _yawspeed_sp : 0.f;//yaw control can be separated based on 2 matrices
 	_yaw_sp = PX4_ISFINITE(_yaw_sp) ? _yaw_sp : _yaw; // TODO: better way to disable yaw control
 	//check value for the switch
+
+	bool distance_flag=false;
+	float error_xy=sqrt(pow((_pos_sp(0) - _pos(0)),2)+pow((_pos_sp(1) - _pos(1)),2));
+	distance_flag= (error_xy>=0.10f)?true:false;
+	planar_flag=(planar_flight||distance_flag)?true:false;
+
+
+	// PX4_INFO("Distancer to error %f %s", double(error_xy),planar_flag?"Planar" :"Tilting");
+
 	switch (vectoring_att_mode) {
 	case 2: {
-		if (planar_flight){
+		if (planar_flag){
 		_planar_positionControl(dt,_yaw_sp);
 		_planar_velocityControl(dt,_yaw_sp);
+		PX4_INFO("PLANAR");
+
 		}
 		else {
 		_positionControl();
 		_velocityControl(dt);
+		PX4_INFO("Tilted");
+
 		}
 		break;
 		}
@@ -161,10 +174,11 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode,bool p
 		_velocityControl(dt);
 		break;//here
 	default:
-		if (planar_flight){
+		if (planar_flag){
 		_planar_positionControl(dt,_yaw_sp);
 		_planar_velocityControl(dt,_yaw_sp);
 		PX4_INFO("PLANAR");
+
 		}
 		else {
 		_positionControl();
@@ -180,8 +194,7 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode,bool p
 }
 
 void PositionControl::_positionControl()
-{
-	// P-position controller
+{	// P-position controller
 	Vector3f vel_sp_position = (_pos_sp - _pos).emult(_gain_pos_p);
 	// Position and feed-forward velocity setpoints or position states being NAN results in them not having an influence
 	ControlMath::addIfNotNanVector3f(_vel_sp, vel_sp_position);
@@ -533,6 +546,6 @@ void PositionControl::getAttitudeSetpoint(const matrix::Quatf &att, const int ve
 					bool planar_flight)
 					const
 {
-	ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, att, vectoring_att_mode,attitude_setpoint, thrust_vectoring_status,planar_flight);
+	ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, att, vectoring_att_mode,attitude_setpoint, thrust_vectoring_status,planar_flag);
 	attitude_setpoint.yaw_sp_move_rate = _yawspeed_sp;
 }
