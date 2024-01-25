@@ -139,7 +139,7 @@ public:
 	 * @param min minimum thrust e.g. 0.1 or 0
 	 * @param max maximum thrust e.g. 0.9 or 1
 	 */
-	void setPlanarThrustLimits(const float min, const float max);
+	void setPlanarThrustLimits(const float min, const float max,const float planar_threshold);
 	//Planar Parameters
 
 
@@ -249,7 +249,13 @@ private:
 	// For the planar control of the system
 	void _planar_positionControl(const float dt,const float yaw_sp);// planar proportional position control
 	void _planar_velocityControl(const float dt,const float yaw_sp);  //planar velocity control
-	void _planar_accelerationControl(const float yaw_sp);// separates thrust values if omni condition is on
+	void _planar_accelerationControl(const float yaw_sp);// separates thrust values if planar condition is on
+
+	// For the combined [planar/tilter] control of the system
+	void _combined_positionControl(const float dt,const float yaw_sp);// planar proportional position control
+	void _combined_velocityControl(const float dt,const float yaw_sp);  //planar velocity control
+	void _combined_accelerationControl(const float yaw_sp);// separates thrust values if planar condition is on
+
 
 
 	// Gains
@@ -278,6 +284,7 @@ private:
 	//Planar thrust limits
 	float _lim_planar_thr_min{}; ///< Minimum collective thrust allowed as output [-1,0] e.g. -0.9
 	float _lim_planar_thr_max{}; ///< Maximum collective thrust allowed as output [-1,0] e.g. -0.1
+	float _planar_threshold{0}; // Euclidiean distance (xy) to setpoint to change when close to sp
 	//Planar thrust limits
 
 

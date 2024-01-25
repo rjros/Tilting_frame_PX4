@@ -108,4 +108,17 @@ PARAM_DEFINE_INT32(RC_SIM, 1);
 
 
 
+/**
+ * Threshold switching from planar to tilting mode to hold position.
+ *
+ * Defined as Euclidean (X,Y) distance to setpoint in [m] .
+ *
+ * @min 0.0
+ * @max 1
+ * @decimal 3
+ * @increment 0.001
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(PLANAR_TH, 0.10f);
+
 

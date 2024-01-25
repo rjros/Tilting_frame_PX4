@@ -545,7 +545,7 @@ void MulticopterPositionControl::Run()
 
 			//Horizontal thrust for planar mode
 			float minimum_planar_thrust = flying ? _param_mpc_planar_thr_min.get() : 0.f;
-			_control.setPlanarThrustLimits(minimum_planar_thrust, _param_mpc_planar_thr_max.get());
+			_control.setPlanarThrustLimits(minimum_planar_thrust, _param_mpc_planar_thr_max.get(),_param_planar_threshold.get());
 
 			float max_speed_xy = _param_mpc_xy_vel_max.get();
 

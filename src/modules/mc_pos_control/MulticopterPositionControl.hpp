@@ -212,6 +212,8 @@ private:
 		//Planar Parameters
 		(ParamFloat<px4::params::MPC_PTH_MIN>)      _param_mpc_planar_thr_min,
 		(ParamFloat<px4::params::MPC_PTH_MAX>)      _param_mpc_planar_thr_max,
+		(ParamFloat<px4::params::PLANAR_TH>)        _param_planar_threshold,
+
 		//Planar Parameters
 
 

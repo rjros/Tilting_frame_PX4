@@ -61,36 +61,36 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 	}
 	//check value for the switch
 	switch (vectoring_att_mode) {
-	case 3:
+
+	case 1:
 		// PX4_INFO("Before Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
-		bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
-		att_sp.thrust_body[2] = -thr_sp.length();
-		// PX4_INFO("After Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
+		// bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
+		// att_sp.thrust_body[2] = -thr_sp.length();
+		thrustToZeroTiltAttitude(thr_sp, yaw_sp, att,att_sp);
 		break;
 
 	case 2:
-		// PX4_INFO("Before Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
 		if (planar_flight){
-		thrustToZeroTiltAttitude(thr_sp, yaw_sp, att,att_sp);
+		thrustToFixedPitchAttitude(thr_sp, yaw_sp, att,att_sp);
 		}
 		else {
 		bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
 		att_sp.thrust_body[2] = -thr_sp.length();
 		}
-		// PX4_INFO("After Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
+		break;
+	case 3:
+		bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
+		att_sp.thrust_body[2] = -thr_sp.length();
 		break;
 
 
 	default: //Altitude is calculated from the desired thrust direction
-		// PX4_INFO("Before  Zero Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
-		thrustToZeroTiltAttitude(thr_sp, yaw_sp, att,att_sp);
+		bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
+		att_sp.thrust_body[2] = -thr_sp.length();
 	}
 
 
 	// Estimate the optimal tilt angle and direction to counteract the wind
-
-
-	//
 	// Calculate the setpoint z axis
 	Vector3f cmd_z;
 	matrix::Dcmf R_cmd = matrix::Quatf(att_sp.q_d);
@@ -122,7 +122,8 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 
 }
 
-void thrustTofixedPitchAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
+
+void thrustToFixedPitchAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
 			      vehicle_attitude_setpoint_s &att_sp)
 {
 	//refers to the forward tilt, and used in the MC and Thrust Vectoring model
@@ -152,25 +153,9 @@ void thrustTofixedPitchAttitude(const Vector3f &thr_sp, const float yaw_sp, cons
 	Vector3f thrust_rotated = _rotation * matrix::Vector3f{(float)-body_z(0), (float)-body_z(1), (float)-body_z(2)};
 	// PX4_INFO("Thrust in body frame %f %f %f",(double)thrust_rotated(0),(double)thrust_rotated(1),(double)thrust_rotated(2));
 
-	if (thrust_rotated(0)>-0.001f) {
 	body_z=_rotation2*matrix::Vector3f{0.f, (float)-thrust_rotated(1),(float)-thrust_rotated(2)};
 	body_x = Vector3f(cos(yaw_sp), sin(yaw_sp), 0.0f);
 	body_z.normalize();
-
-
-	}
-
-	else
-	{
-		body_z.normalize();
-		if (body_z.norm_squared() < FLT_EPSILON) {
-			body_z(2) = 1.f;
-		}
-		const Vector3f y_C{-sinf(yaw_sp), cosf(yaw_sp), 0.f};
-		// desired body_x axis, orthogonal to body_z
-		body_x = y_C % body_z;
-
-	}
 
 	// keep nose to front while inverted upside down
 	if (body_z(2) < 0.0f) {

@@ -76,6 +76,17 @@ void thrustToAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, const 
  */
 void thrustToZeroTiltAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
 			      vehicle_attitude_setpoint_s &att_sp);
+
+/**
+ * Converts inertial thrust vector and yaw set-point to a zero tilt in the X axis (Pitch angle) and attitude for the Roll angle body and calcualtes the thrust vector for an omni-directional multirotor.
+ * @param thr_sp a 3D vector
+ * @param yaw_sp the desired yaw
+ * @param att current attitude of the robot
+ * @param att_sp attitude setpoint to fill
+ */
+void thrustToFixedPitchAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att,
+			      vehicle_attitude_setpoint_s &att_sp);
+
 /**
  * Limits the tilt angle between two unit vectors
  * @param body_unit unit vector that will get adjusted if angle is too big
