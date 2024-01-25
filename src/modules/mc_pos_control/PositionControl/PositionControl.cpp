@@ -147,10 +147,17 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode,bool p
 	bool distance_flag=false;
 	float error_xy=sqrt(pow((_pos_sp(0) - _pos(0)),2)+pow((_pos_sp(1) - _pos(1)),2));
 	distance_flag= (error_xy>=0.10f)?true:false;
-	planar_flag=(planar_flight||distance_flag)?true:false;
+	//Distance becomes nan during manual motion
+	bool moving_flag=false;
+	moving_flag=!PX4_ISFINITE(error_xy)?true:false;
+	//Conditions for planar motion
+	planar_flag=(planar_flight||distance_flag||moving_flag)?true:false;
 
+	PX4_INFO("Current position %f %f %f ",double(_pos(0)) ,double(_pos(1)), double(_pos(2)));
+	PX4_INFO("Current setpoint %f %f %f ",double(_pos_sp(0)) ,double(_pos_sp(1)), double(_pos_sp(2)));
+	PX4_INFO("Distancer to error %f %s", double(error_xy),planar_flag?"Planar" :"Tilting");
+	PX4_INFO("MOving flag is  %s",moving_flag?"true" :"false");
 
-	// PX4_INFO("Distancer to error %f %s", double(error_xy),planar_flag?"Planar" :"Tilting");
 
 	switch (vectoring_att_mode) {
 	case 2: {

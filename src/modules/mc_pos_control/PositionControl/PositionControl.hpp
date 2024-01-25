@@ -305,6 +305,7 @@ private:
 
 	//CUSTOM//
 	bool planar_flag=false;
+	bool prev_flag={false};
 	//CUSTOM//
 
 };

@@ -605,7 +605,7 @@ void MulticopterPositionControl::Run()
 			//check the values of the stick are larger than threshold
 			stick_roll=abs(stick_setpoints.roll);
 			stick_pitch=abs(stick_setpoints.pitch);
-			planar_flight=(stick_roll>=0.10f || stick_pitch>=0.10f)?true:false;
+			planar_flight=(stick_roll>=0.05f || stick_pitch>=0.05f)?true:false;
 
 			// PX4_INFO("Stick value %s", planar_flight ? "true" : "false");
 			// PX4_INFO("Stick roll %f and pitch %f", double(stick_roll),double(stick_pitch));
