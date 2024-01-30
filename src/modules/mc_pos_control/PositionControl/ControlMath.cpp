@@ -63,10 +63,13 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 	switch (vectoring_att_mode) {
 
 	case 1:
-		// PX4_INFO("Before Thrust Value length and component %f %f ",(double)-thr_sp.length(),(double)att_sp.thrust_body[2]);
-		// bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
-		// att_sp.thrust_body[2] = -thr_sp.length();
+		if (planar_flight){
 		thrustToZeroTiltAttitude(thr_sp, yaw_sp, att,att_sp);
+		}
+		else {
+		bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
+		att_sp.thrust_body[2] = -thr_sp.length();
+		}
 		break;
 
 	case 2:
