@@ -256,6 +256,11 @@ private:
 	void _combined_velocityControl(const float dt,const float yaw_sp);  //planar velocity control
 	void _combined_accelerationControl(const float yaw_sp);// separates thrust values if planar condition is on
 
+	// For single pitch control of the system
+	void _single_positionControl(const float dt,const float yaw_sp);// planar proportional position control
+	void _single_velocityControl(const float dt,const float yaw_sp);  //planar velocity control
+	void _single_accelerationControl(const float yaw_sp);// separates thrust values if planar condition is on
+
 
 
 	// Gains
