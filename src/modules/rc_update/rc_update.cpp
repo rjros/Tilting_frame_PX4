@@ -247,7 +247,7 @@ void RCUpdate::update_rc_functions()
 	_rc.function[rc_channels_s::FUNCTION_TRANSITION] = _param_rc_map_trans_sw.get() - 1;
 	_rc.function[rc_channels_s::FUNCTION_GEAR] = _param_rc_map_gear_sw.get() - 1;
 
-	//omni mode parameters
+	//Planar Thrust mode parameters
 	_rc.function[rc_channels_s::FUNCTION_VECTORING_MODE] = _param_rc_vectoring_mode_sw.get() -1;
 	_rc.function[rc_channels_s::FUNCTION_ANGLE_SWITCH] = _param_rc_orientation_sw.get() -1;
 

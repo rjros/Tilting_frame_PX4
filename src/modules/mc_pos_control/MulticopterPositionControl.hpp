@@ -131,6 +131,7 @@ private:
 	float stick_pitch{0};
 	//Values from setpoints
 	bool planar_flight =false;
+	int flight_mode=0;
 
 
 	manual_control_switches_s switches{};

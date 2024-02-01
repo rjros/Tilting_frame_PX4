@@ -55,11 +55,6 @@ namespace ControlMath
 void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::Quatf &att, const int vectoring_att_mode,
 		      vehicle_attitude_setpoint_s &att_sp, thrust_vectoring_attitude_status_s &thrust_vectoring_status,bool planar_flight)
 {
-	// Print an error if the omni_att_mode parameter is out of range
-	if (vectoring_att_mode > 6 || vectoring_att_mode < 0) {
-		// PX4_ERR("OMNI_ATT_MODE parameter set to unknown value!");
-	}
-	//check value for the switch
 	switch (vectoring_att_mode) {
 
 	case 1:
@@ -71,7 +66,6 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 		att_sp.thrust_body[2] = -thr_sp.length();
 		}
 		break;
-
 	case 2:
 		if (planar_flight){
 		thrustToFixedPitchAttitude(thr_sp, yaw_sp, att,att_sp);
@@ -81,6 +75,7 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 		att_sp.thrust_body[2] = -thr_sp.length();
 		}
 		break;
+
 	case 3:
 		bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
 		att_sp.thrust_body[2] = -thr_sp.length();
@@ -102,11 +97,6 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 		cmd_z(i) = R_cmd(i, 2);
 	}
 
-	thrust_vectoring_status.tilt_angle_est = asinf(Vector2f(cmd_z(0), cmd_z(1)).norm() / cmd_z.norm());
-
-	thrust_vectoring_status.tilt_direction_est = wrap_2pi(atan2f(-cmd_z(1), -cmd_z(0)));
-	thrust_vectoring_status.tilt_roll_est = att_sp.roll_body;
-	thrust_vectoring_status.tilt_pitch_est = att_sp.pitch_body;
 
 	// Calculate the current z axis
 	Vector3f curr_z;
@@ -116,12 +106,6 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const matrix::
 		curr_z(i) = R_body(i, 2);
 	}
 
-	// // Calculate the tilt angle and direction
-	// float current_tilt_angle = asinf(Vector2f(curr_z(0), curr_z(1)).norm() / curr_z.norm());
-	// float current_tilt_dir = wrap_2pi(atan2f(-curr_z(1), -curr_z(0)));
-
-	// thrust_vectoring_status.tilt_angle_meas = current_tilt_angle;
-	// thrust_vectoring_status.tilt_direction_meas = current_tilt_dir;
 
 }
 
@@ -160,7 +144,6 @@ void thrustToSinglePlanarAttitude(const Vector3f &thr_sp, const float yaw_sp, co
 	body_z.normalize();
 
 	}
-
 	else
 	{
 		body_z.normalize();
@@ -214,10 +197,16 @@ void thrustToSinglePlanarAttitude(const Vector3f &thr_sp, const float yaw_sp, co
 	att_sp.yaw_body = euler.psi();
 
 	//thrust from the x axis
+	if (thrust_rotated(0)>-0.001f) {
 	att_sp.thrust_body[0] = thrust_sp_xy.dot(body_x);//value of the thrust
 	att_sp.thrust_body[1] = thrust_sp_xy.dot(body_y);// not the same
 	att_sp.thrust_body[2] = thr_sp.dot(body_z);//value of the z thrust
+	}
+	else
+	{
+	att_sp.thrust_body[2] = thr_sp.dot(body_z);//value of the z thrust
 
+	}
 	// PX4_INFO("Thrust  %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
 	// PX4_INFO("Orientation  %f %f %f",(double)math::degrees(att_sp.roll_body),(double)math::degrees(att_sp.pitch_body),(double)math::degrees(att_sp.yaw_body));
 

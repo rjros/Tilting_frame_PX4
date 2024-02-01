@@ -152,6 +152,7 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode,bool p
 	bool moving_flag=false;
 	moving_flag=!PX4_ISFINITE(error_xy)?true:false;
 	//Conditions for planar motion
+	//Vectoring mode on or off only
 	planar_flag=(planar_flight||distance_flag||moving_flag)?true:false;
 
 	// PX4_INFO("Current position %f %f %f ",double(_pos(0)) ,double(_pos(1)), double(_pos(2)));
@@ -159,36 +160,35 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode,bool p
 	// PX4_INFO("Distancer to error %f %s", double(error_xy),planar_flag?"Planar" :"Tilting");
 	// PX4_INFO("MOving flag is  %s",moving_flag?"true" :"false");
 
-
 	switch (vectoring_att_mode) {
 
-	case 1:
 
+		case 1:
 		if (planar_flag){
 		_single_positionControl(dt,_yaw_sp);
 		_single_velocityControl(dt,_yaw_sp);
-		PX4_INFO("combined planar");
+		// PX4_INFO("combined planar");
 		}
 		else {
 		_positionControl();
 		_velocityControl(dt);
-		PX4_INFO("tilted");\
-		}
-		break;
-
-	case 2:
-		if (planar_flag){
-		_combined_positionControl(dt,_yaw_sp);
-		_combined_velocityControl(dt,_yaw_sp);
-		PX4_INFO("combined planar");
-		}
-		else {
-		_positionControl();
-		_velocityControl(dt);
-		PX4_INFO("tilted");
+		// PX4_INFO("tilted");
 		}
 		break;//here
 
+	case 2:
+
+		if (planar_flag){
+		_combined_positionControl(dt,_yaw_sp);
+		_combined_velocityControl(dt,_yaw_sp);
+		// PX4_INFO("combined planar");
+		}
+		else {
+		_positionControl();
+		_velocityControl(dt);
+		// PX4_INFO("tilted");
+		}
+		break;
 	case 3:
 		_positionControl();
 		_velocityControl(dt);
@@ -823,25 +823,7 @@ void PositionControl::_single_accelerationControl(const float yaw_sp)
 }
 
 
-
-
-
-
-
-
-
-
-
-
 ///////////////// SINGLE PLANAR PITCH CONTROL PID/////////////////
-
-
-
-
-
-
-
-
 bool PositionControl::_inputValid()
 {
 	bool valid = true;

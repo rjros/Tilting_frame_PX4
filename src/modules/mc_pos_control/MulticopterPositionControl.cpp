@@ -598,7 +598,6 @@ void MulticopterPositionControl::Run()
 
 			}
 
-
 			//Check the values of the stick to allow for mode switching tilted stop, and planar motion
 			manual_control_set_sub.copy(&stick_setpoints);
 
@@ -606,6 +605,17 @@ void MulticopterPositionControl::Run()
 			stick_roll=abs(stick_setpoints.roll);
 			stick_pitch=abs(stick_setpoints.pitch);
 			planar_flight=(stick_roll>=0.05f || stick_pitch>=0.05f)?true:false;
+
+
+			if (stick_setpoints.aux1<-0.5f){
+				flight_mode=1;
+			}
+			else if (stick_setpoints.aux1<0.5f && stick_setpoints.aux1>-0.5f){
+				flight_mode=2;
+			}
+			else{
+				flight_mode=3;
+			}
 
 			// PX4_INFO("Stick value %s", planar_flight ? "true" : "false");
 			// PX4_INFO("Stick roll %f and pitch %f", double(stick_roll),double(stick_pitch));
@@ -626,8 +636,6 @@ void MulticopterPositionControl::Run()
 			//_control.getAttitudeSetpoint(attitude_setpoint);
 			attitude_setpoint.timestamp = hrt_absolute_time();
 
-
-
 			///////////////////////////////////////////////////////////
 			// Thrust vectoring parameters, changed by rc or by the QGroundControl
 			thrust_vectoring_attitude_status_s vectoring_status{};
@@ -645,12 +653,13 @@ void MulticopterPositionControl::Run()
 				param_t vectoring_param = param_handle(px4::params::VECT_ATT_MODE);
 				param_t angle_param =param_handle(px4::params::MAN_ATT_DIR);
 				manual_control_switches_sub.update(&switches);
-				int32_t att_mode= switches.vectoring_switch;
+				int32_t att_mode= flight_mode;
+				// int32_t orientation =switches.orientation_switch;
 				int32_t orientation =switches.orientation_switch;
 				param_set(vectoring_param,&att_mode);
 				param_set(angle_param,&orientation);
 				//Thrust vectoring status for tilting and not tilting mode
-				vectoring_status.att_mode=switches.vectoring_switch;
+				vectoring_status.att_mode=flight_mode;
 				vectoring_status.manual_orientation=switches.orientation_switch;
 
 			}
@@ -666,8 +675,6 @@ void MulticopterPositionControl::Run()
 			//Add condition for selecting between rc or saved condition
 			vectoring_status.att_mode = _param_vectoring_att_mode.get();
 			vectoring_status.manual_orientation = _param_vectoring_manual_dir.get();
-
-
 
 
 			//Angles for the tilting
