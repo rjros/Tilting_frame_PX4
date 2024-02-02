@@ -205,6 +205,8 @@ void thrustToSinglePlanarAttitude(const Vector3f &thr_sp, const float yaw_sp, co
 	else
 	{
 	att_sp.thrust_body[2] = thr_sp.dot(body_z);//value of the z thrust
+	att_sp.thrust_body[1] = 0.0f;
+	att_sp.thrust_body[2] = 0.0f;
 
 	}
 	// PX4_INFO("Thrust  %f %f %f",(double)att_sp.thrust_body[0],(double)att_sp.thrust_body[1],(double)att_sp.thrust_body[2]);
