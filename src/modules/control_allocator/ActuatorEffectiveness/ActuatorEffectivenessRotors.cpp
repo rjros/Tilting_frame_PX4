@@ -101,12 +101,12 @@ void ActuatorEffectivenessRotors::updateParams()
 
 
 	if (param_get(_count_handle, &count) != 0) {
-		PX4_ERR("param_get failed");
+		// PX4_ERR("param_get failed");
 		return;
 	}
 
 	if (param_get(_tilting_index, &tilting_index) != 0) {
-		PX4_ERR("param_get failed");
+		// PX4_ERR("param_get failed");
 		return;
 	}
 
@@ -117,7 +117,7 @@ void ActuatorEffectivenessRotors::updateParams()
 
 	// PX4_INFO("Changed Axis");
 	_thrust_vectoring_status_sub.copy(&thrust_vec_status);
-	PX4_INFO("Tilting index %d", tilting_index);
+	// PX4_INFO("Tilting index %d", tilting_index);
 
 
 

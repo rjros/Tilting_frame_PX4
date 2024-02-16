@@ -136,9 +136,9 @@ bool PositionControl::update(const float dt, const int vectoring_att_mode)
 
 	if (valid) {
 
-	if (vectoring_att_mode > 6 || vectoring_att_mode< 0) {
-		PX4_ERR("Vectoring Mode parameter set to unknown value!");
-	}
+	// if (vectoring_att_mode > 6 || vectoring_att_mode< 0) {
+	// 	PX4_ERR("Vectoring Mode parameter set to unknown value!");
+	// }
 
 	//check value for the switch
 	switch (vectoring_att_mode) {
