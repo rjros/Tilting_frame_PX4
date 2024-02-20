@@ -322,12 +322,13 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 	case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
 		handle_message_gimbal_device_attitude_status(msg);
 		break;
-	case MAVLINK_MSG_ID_KEY_COMMAND:
-		handle_message_key_command(msg);
-		break;
-	case MAVLINK_MSG_ID_THRUST_VECTORING_SETPOINT:
-		handle_message_thrust_vectoring_setpoint(msg);
-		break;
+	//Used for mavros but required changes in mavlink custom message
+	// case MAVLINK_MSG_ID_KEY_COMMAND:
+	// 	handle_message_key_command(msg);
+	// 	break;
+	// case MAVLINK_MSG_ID_THRUST_VECTORING_SETPOINT:
+	// 	handle_message_thrust_vectoring_setpoint(msg);
+	// 	break;
 
 	default:
 		break;
@@ -3079,57 +3080,57 @@ MavlinkReceiver::handle_message_gimbal_device_attitude_status(mavlink_message_t 
 }
 
 
-void
-MavlinkReceiver::handle_message_key_command(mavlink_message_t *msg)
-{
-	mavlink_key_command_t man;
-	mavlink_msg_key_command_decode(msg, &man);
+// void
+// MavlinkReceiver::handle_message_key_command(mavlink_message_t *msg)
+// {
+// 	mavlink_key_command_t man;
+// 	mavlink_msg_key_command_decode(msg, &man);
 
-	struct key_command_s key = {};
+// 	struct key_command_s key = {};
 
-	key.timestamp = hrt_absolute_time();
-	key.cmd = man.command;
+// 	key.timestamp = hrt_absolute_time();
+// 	key.cmd = man.command;
 
-	if (_key_command_pub == nullptr) {
-		key.cmd=0;
-		_key_command_pub = orb_advertise(ORB_ID(key_command), &key);
+// 	if (_key_command_pub == nullptr) {
+// 		key.cmd=0;
+// 		_key_command_pub = orb_advertise(ORB_ID(key_command), &key);
 
-	} else {
-		orb_publish(ORB_ID(key_command), _key_command_pub, &key);
-	}
-}
+// 	} else {
+// 		orb_publish(ORB_ID(key_command), _key_command_pub, &key);
+// 	}
+// }
 
-void
-MavlinkReceiver::handle_message_thrust_vectoring_setpoint(mavlink_message_t *msg)
-{
-	mavlink_thrust_vectoring_setpoint_t setpoint_msg;
-	mavlink_msg_thrust_vectoring_setpoint_decode(msg, &setpoint_msg);
+// void
+// MavlinkReceiver::handle_message_thrust_vectoring_setpoint(mavlink_message_t *msg)
+// {
+// 	mavlink_thrust_vectoring_setpoint_t setpoint_msg;
+// 	mavlink_msg_thrust_vectoring_setpoint_decode(msg, &setpoint_msg);
 
-	struct thrust_vectoring_setpoint_s setpoint = {};
+// 	struct thrust_vectoring_setpoint_s setpoint = {};
 
-	setpoint.timestamp = hrt_absolute_time();
-	setpoint.force[0] = setpoint_msg.thrust_body[0];
-	setpoint.force[1] = setpoint_msg.thrust_body[1];
-	setpoint.force[2] = setpoint_msg.thrust_body[2];
+// 	setpoint.timestamp = hrt_absolute_time();
+// 	setpoint.force[0] = setpoint_msg.thrust_body[0];
+// 	setpoint.force[1] = setpoint_msg.thrust_body[1];
+// 	setpoint.force[2] = setpoint_msg.thrust_body[2];
 
-	setpoint.torque[0] = setpoint_msg.torque_body[0];
-	setpoint.torque[1] = setpoint_msg.torque_body[1];
-	setpoint.torque[2] = setpoint_msg.torque_body[2];
+// 	setpoint.torque[0] = setpoint_msg.torque_body[0];
+// 	setpoint.torque[1] = setpoint_msg.torque_body[1];
+// 	setpoint.torque[2] = setpoint_msg.torque_body[2];
 
-	setpoint.servo_angle[0] = setpoint_msg.servo_angle[0];
-	setpoint.servo_angle[1] = setpoint_msg.servo_angle[1];
-	setpoint.servo_angle[2] = setpoint_msg.servo_angle[2];
-	setpoint.servo_angle[3] = setpoint_msg.servo_angle[3];
-	setpoint.servo_angle[4] = setpoint_msg.servo_angle[4];
-	setpoint.servo_angle[5] = setpoint_msg.servo_angle[5];
+// 	setpoint.servo_angle[0] = setpoint_msg.servo_angle[0];
+// 	setpoint.servo_angle[1] = setpoint_msg.servo_angle[1];
+// 	setpoint.servo_angle[2] = setpoint_msg.servo_angle[2];
+// 	setpoint.servo_angle[3] = setpoint_msg.servo_angle[3];
+// 	setpoint.servo_angle[4] = setpoint_msg.servo_angle[4];
+// 	setpoint.servo_angle[5] = setpoint_msg.servo_angle[5];
 
-	if (_thrust_vectoring_set_pub == nullptr) {
-		_thrust_vectoring_set_pub = orb_advertise(ORB_ID(thrust_vectoring_setpoint), &setpoint);
+// 	if (_thrust_vectoring_set_pub == nullptr) {
+// 		_thrust_vectoring_set_pub = orb_advertise(ORB_ID(thrust_vectoring_setpoint), &setpoint);
 
-	} else {
-		orb_publish(ORB_ID(thrust_vectoring_setpoint), _thrust_vectoring_set_pub , &setpoint);
-	}
-}
+// 	} else {
+// 		orb_publish(ORB_ID(thrust_vectoring_setpoint), _thrust_vectoring_set_pub , &setpoint);
+// 	}
+// }
 
 void
 MavlinkReceiver::run()
